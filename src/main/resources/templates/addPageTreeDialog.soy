@@ -1,0 +1,35 @@
+{namespace Confluence.Templates.AddPagetree}
+
+/**
+ * Add page tree dialog
+ * @noparams
+ */
+{template .addPageTreeDialog}
+	<!-- Render the dialog -->
+	<section role="dialog" id="add-page-tree-dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
+	    <!-- Dialog header -->
+	    <header class="aui-dialog2-header">
+	        <!-- The dialog's title -->
+	        <h2 class="aui-dialog2-header-main">Add page tree</h2>
+	        <!-- Close icon -->
+	        <a class="aui-dialog2-header-close">
+	            <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
+	        </a>
+	    </header>
+	    <!-- Main dialog content -->
+	    <div class="aui-dialog2-content">
+	        <div id="page-tree">
+	        </div>
+	    </div>
+	    <!-- Dialog footer -->
+	    <footer class="aui-dialog2-footer">
+	        <!-- Actions to render on the right of the footer -->
+	        <div class="aui-dialog2-footer-actions">
+	        	<button id="add-page-tree-dialog-save-button" class="aui-button aui-button-primary">Save</button>
+	            <button id="add-page-tree-dialog-close-button" class="aui-button aui-button-link">Close</button>
+	        </div>
+	        <!-- Hint text is rendered on the left of the footer -->
+	        <div class="aui-dialog2-footer-hint">Click save to create page stubs. Cancel to discard.</div>
+	    </footer>
+	</section>
+{/template}
