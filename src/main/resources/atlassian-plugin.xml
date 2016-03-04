@@ -1,77 +1,80 @@
 <atlassian-plugin key="${project.groupId}.${project.artifactId}"
-	name="${project.name}" plugins-version="2">
-	<plugin-info>
-		<description>${project.description}</description>
-		<version>${project.version}</version>
-		<vendor name="${project.organization.name}" url="${project.organization.url}" />
-		<param name="plugin-icon">images/pluginIcon.png</param>
-		<param name="plugin-logo">images/pluginLogo.png</param>
-	</plugin-info>
+                  name="${project.name}" plugins-version="2">
+    <plugin-info>
+        <description>${project.description}</description>
+        <version>${project.version}</version>
+        <vendor name="${project.organization.name}" url="${project.organization.url}"/>
+        <param name="plugin-icon">images/pluginIcon.png</param>
+        <param name="plugin-logo">images/pluginLogo.png</param>
+    </plugin-info>
 
-	<!-- add our i18n resource -->
-	<resource type="i18n" name="i18n" location="add-pagetree" />
+    <!-- add our i18n resource -->
+    <resource type="i18n" name="i18n" location="add-pagetree"/>
 
-	<!-- add our web resources -->
-	<web-resource key="add-pagetree-resources" name="add-pagetree Web Resources">
-		<dependency>com.atlassian.auiplugin:ajs</dependency>
-		<resource type="download" name="jquery-1.11.3.min.js"
-			location="/js/jquery-1.11.3.min.js" />
-		<resource type="download" name="add-pagetree.css" location="/css/add-pagetree.css" />
-		<resource type="download" name="add-pagetree.js" location="/js/add-pagetree.js" />
-		<resource type="download" name="images/" location="/images" />
-		<resource type="download" name="jstree/jstree.js" location="/js/jstree/jstree.js" />
-		<resource type="download" name="jstree/themes/default/style.css"
-			location="/js/jstree/themes/default/style.css" />
+    <!-- add our web resources -->
+    <web-resource key="add-pagetree-resources" name="add-pagetree Web Resources">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
 
-		<context>page</context>
-		<context>add-pagetree</context>
-	</web-resource>
+        <resource type="download" name="jquery-1.11.3.min.js" location="/js/jquery-1.11.3.min.js"/>
 
-	<web-resource key="soy-templates">
-		<dependency>
-			com.atlassian.soy.soy-template-plugin:soy-deps
-		</dependency>
+        <resource type="download" name="jstree/jstree.js" location="/js/jstree/jstree.js"/>
+        <resource type="download" name="jstree/themes/default/style.css"
+                  location="/js/jstree/themes/default/style.css"/>
 
-		<!-- Available to the server-side only -->
-		<resource type="soy" name="addPageTreeDialog" location="/templates/addPageTreeDialog.soy" />
-		<!-- Make available to the client-side in JS as well... -->
-		<transformation extension="soy">
-			<transformer key="soyTransformer" />
-		</transformation>
-		<resource type="download" name="addPageTreeDialog.soy.js"
-			location="/templates/addPageTreeDialog.soy" />
+        <resource type="download" name="add-pagetree.css" location="/css/add-pagetree.css"/>
+        <resource type="download" name="add-pagetree.js" location="/js/add-pagetree.js"/>
 
-		<context>page</context>
-		<context>add-pagetree</context>
-	</web-resource>
+        <resource type="download" name="images/" location="/images"/>
 
-	<web-panel key="pagetree_dialog" location="atl.general">
-		<resource name="view" type="soy"
-			location="com.networkedassets.plugins.add-pagetree:soy-templates/Confluence.Templates.AddPagetree.addPageTreeDialog" />
-		<!-- <condition class="com.atlassian.confluence.plugin.descriptor.web.conditions.HasSpaceCondition" 
-			/> -->
-	</web-panel>
+        <context>page</context>
+        <context>add-pagetree</context>
+    </web-resource>
 
-	<web-item name="Add pageTree - link" key="add-pagetree-link"
-		section="system.content.action/modify" weight="999">
-		<description key="add-pagetree-link.description">
-			Link for bulk adding pages (page trees)
-		</description>
-		<label key="add-pagetree.linklabel" />
-		<link linkId="add-pagetree-link-id" />
-		<condition class="com.atlassian.confluence.plugin.descriptor.web.conditions.SpacePermissionCondition">
-			<param name="permission">administer</param>
-		</condition>
-	</web-item>
+    <web-resource key="soy-templates">
+        <dependency>
+            com.atlassian.soy.soy-template-plugin:soy-deps
+        </dependency>
 
-	<rest key="rest" path="/pagetree" version="1.0">
-		<description>Provides REST endpoints used by pagetree plugin</description>
-	</rest>
+        <!-- Available to the server-side only -->
+        <resource type="soy" name="addPageTreeDialog" location="/templates/addPageTreeDialog.soy"/>
+        <!-- Make available to the client-side in JS as well... -->
+        <transformation extension="soy">
+            <transformer key="soyTransformer"/>
+        </transformation>
+        <resource type="download" name="addPageTreeDialog.soy.js"
+                  location="/templates/addPageTreeDialog.soy"/>
 
-	<!-- imports -->
-	<component-import key="applicationProperties"
-		interface="com.atlassian.sal.api.ApplicationProperties" />
-	<component-import key="soyTemplateRenderer"
-		interface="com.atlassian.soy.renderer.SoyTemplateRenderer" />
+        <context>page</context>
+        <context>add-pagetree</context>
+    </web-resource>
+
+    <web-panel key="pagetree_dialog" location="atl.general">
+        <resource name="view" type="soy"
+                  location="com.networkedassets.plugins.add-pagetree:soy-templates/Confluence.Templates.AddPagetree.addPageTreeDialog"/>
+        <!-- <condition class="com.atlassian.confluence.plugin.descriptor.web.conditions.HasSpaceCondition"
+            /> -->
+    </web-panel>
+
+    <web-item name="Add pageTree - link" key="add-pagetree-link"
+              section="system.content.action/modify" weight="999">
+        <description key="add-pagetree-link.description">
+            Link for bulk adding pages (page trees)
+        </description>
+        <label key="add-pagetree.linklabel"/>
+        <link linkId="add-pagetree-link-id"/>
+        <condition class="com.atlassian.confluence.plugin.descriptor.web.conditions.SpacePermissionCondition">
+            <param name="permission">administer</param>
+        </condition>
+    </web-item>
+
+    <rest key="rest" path="/pagetree" version="1.0">
+        <description>Provides REST endpoints used by pagetree plugin</description>
+    </rest>
+
+    <!-- imports -->
+    <component-import key="applicationProperties"
+                      interface="com.atlassian.sal.api.ApplicationProperties"/>
+    <component-import key="soyTemplateRenderer"
+                      interface="com.atlassian.soy.renderer.SoyTemplateRenderer"/>
 
 </atlassian-plugin>

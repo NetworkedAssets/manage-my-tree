@@ -80,7 +80,11 @@ var showAddPageTreeDialog = (function ($) {
             var text = makeNode(node.text, isRoot);
             return {
                 id: node.id,
-                text: text
+                text: text,
+                icon: 'icon-page',
+                children: (Array.isArray(node.children))
+                    ? node.children.map(function (child) { return makeNode(child, false) })
+                    : []
             };
         } else if (typeof node == 'string') {
             var res = node + '<button class="add-node-btn">+</button>';
@@ -105,8 +109,7 @@ var showAddPageTreeDialog = (function ($) {
                 "themes": {
                     "stripes": true
                 },
-                "multiple": false,
-
+                "multiple": false
             },
             "plugins": ["dnd"],
             "dnd": {
@@ -122,39 +125,45 @@ var showAddPageTreeDialog = (function ($) {
     };
 })(jQuery_1_11);
 
+function setupPageTree(tree) {
+    showAddPageTreeDialog(tree, function (pageTrees) {
+        if (pageTrees) {
+            $.ajax({
+                type: "POST",
+                url: Confluence.getBaseUrl() + "/rest/pagetree/1.0/manage?space=" + AJS.params.spaceKey,
+                data: JSON.stringify(pageTrees),
+                contentType: "application/json",
+                dataType: "json",
+                success: function (data) {
+                    console.log(JSON.stringify(data));
+                    if (data.status == 500)
+                        alert(data.message);
+                    else
+                        location.reload();
+                },
+                error: function (data) {
+                    data = JSON.parse(data.responseText);
+                    console.log(JSON.stringify(data));
+                    if (data.status == 500)
+                        alert(data.message);
+                    else
+                        location.reload();
+                }
+            });
+        }
+    });
+}
 AJS.toInit(function () {
     if (AJS.params.isSpaceAdmin) {
         AJS.$("#add-pagetree-link-id").click(function (e) {
             e.preventDefault();
-            showAddPageTreeDialog({
-                id: Confluence.getContentId(),
-                text: AJS.$("#title-text a").text()
-            }, function (pageTrees) {
-                if (pageTrees) {
-                    console.log("url: " + Confluence.getBaseUrl() + "/rest/pagetree/1.0/manage?space=" + AJS.params.spaceKey);
-                    $.ajax({
-                        type: "POST",
-                        url: Confluence.getBaseUrl() + "/rest/pagetree/1.0/manage?space=" + AJS.params.spaceKey,
-                        data: JSON.stringify(pageTrees),
-                        contentType: "application/json",
-                        dataType: "json",
-                        success: function (data) {
-                            console.log(JSON.stringify(data));
-                            if (data.status == 500)
-                                alert(data.message);
-                            else
-                                location.reload();
-                        },
-                        error: function (data) {
-                            data = JSON.parse(data.responseText);
-                            console.log(JSON.stringify(data));
-                            if (data.status == 500)
-                                alert(data.message);
-                            else
-                                location.reload();
-                        }
-                    });
-                }
+
+            $.ajax({
+                type: "GET",
+                url: Confluence.getBaseUrl() + "/rest/pagetree/1.0/pagetree?space=" + AJS.params.spaceKey,
+                dataType: "json",
+                success: setupPageTree,
+                error: function() {eval("debugger")}
             });
         });
     } else {

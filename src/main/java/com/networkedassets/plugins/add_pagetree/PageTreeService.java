@@ -3,6 +3,7 @@ package com.networkedassets.plugins.add_pagetree;
 import com.atlassian.confluence.pages.Page;
 import com.atlassian.confluence.pages.PageManager;
 import com.atlassian.confluence.security.PermissionManager;
+import com.atlassian.confluence.spaces.Space;
 import com.atlassian.confluence.spaces.SpaceManager;
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal;
 import com.atlassian.fugue.Either;
@@ -15,6 +16,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Path("/")
 public class PageTreeService {
@@ -47,7 +49,7 @@ public class PageTreeService {
 
         try {
             for (JsonPage page : pageOrError.left()) {
-                page.addPages(pageManager);
+                page.addPageAndChildrenTo(pageManager);
             }
         } catch (final Exception e) {
             return error(e);
@@ -66,6 +68,38 @@ public class PageTreeService {
         return Either.left(pages.get(0));
     }
 
+    @GET
+    @Path("pagetree")
+    @Produces({"application/json"})
+    public Response getPageTree(@QueryParam("space") String spaceKey, @QueryParam("rootPageId") Long rootId) {
+        Space space = spaceManager.getSpace(spaceKey);
+        if (isUnauthorized(space)) return error("Unauthorized");
+
+        Page page = pageFromSpaceOrHomepage(rootId, space);
+
+        return Response.ok(JsonPage.from(page)).build();
+    }
+
+    private Page pageFromSpaceOrHomepage(Long pageId, Space space) {
+        Page page;
+        if (pageId == null || (page = pageManager.getPage(pageId)) == null || page.getSpace() != space)
+            return space.getHomePage();
+        else return page;
+    }
+
+    private boolean isUnauthorized(Space space) {
+        return permissionManager == null || !permissionManager
+                .hasCreatePermission(AuthenticatedUserThreadLocal.get(), space, Page.class);
+    }
+
+    private boolean isUnauthorized(String spaceKey) {
+        return isUnauthorized(spaceManager.getSpace(spaceKey));
+    }
+
+    private Response error(String message) {
+        return Response.status(500).entity(new JsonMessage(500, message)).build();
+    }
+
     private Response error(Exception exception) {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps;
@@ -79,15 +113,6 @@ public class PageTreeService {
         }
         exception.printStackTrace(ps);
         return error(baos.toString());
-    }
-
-    private boolean isUnauthorized(@QueryParam("space") String space) {
-        return permissionManager == null || !permissionManager
-                .hasCreatePermission(AuthenticatedUserThreadLocal.get(), spaceManager.getSpace(space), Page.class);
-    }
-
-    private Response error(String message) {
-        return Response.status(500).entity(new JsonMessage(500, message)).build();
     }
 
     private Response success(String message) {
@@ -110,7 +135,7 @@ public class PageTreeService {
         public String text;
         public List<JsonPage> children;
 
-        private Page addPages(PageManager pageManager) {
+        private Page addPageAndChildrenTo(PageManager pageManager) {
             final Page page = pageManager.getPage(Long.parseLong(id));
             for (final JsonPage child : children) {
                 child.setParent(page, pageManager);
@@ -129,6 +154,14 @@ public class PageTreeService {
             for (final JsonPage child : children) {
                 child.setParent(page, pageManager);
             }
+        }
+
+        public static JsonPage from(Page page) {
+            JsonPage jpage = new JsonPage();
+            jpage.id = Long.toString(page.getId());
+            jpage.text = page.getDisplayTitle();
+            jpage.children = page.getChildren().stream().map(JsonPage::from).collect(Collectors.toList());
+            return jpage;
         }
     }
 }
