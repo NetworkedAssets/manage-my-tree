@@ -1,3 +1,7 @@
+.jstree-default .jstree-icon.jstree-themeicon.icon-page.jstree-themeicon-custom {
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAiElEQVQoz72NMQrDMAxFdRbfqfcQmkKmQkedonMpdMk5SsmUQVf4uyHwO9ihNqZbqd6opycREXkkh1JplYn3k7TjmLkig8FgZCjnXjFudVlQ3tBVjO2aoWRc0VRGoTDxi3BgvxaOz4X/FzLGwo5GeGG83z6C48In9k5acaajCktyGHuUjiWJvAGUIE/eIh8szwAAAABJRU5ErkJggg==) 50%;
+}
+
 /* jsTree default theme */
 .jstree-node,
 .jstree-children,
@@ -64,6 +68,9 @@
 }
 .jstree-no-icons .jstree-themeicon,
 .jstree-anchor > .jstree-themeicon-hidden {
+  display: none;
+}
+.jstree-hidden {
   display: none;
 }
 .jstree-rtl .jstree-anchor {
@@ -452,6 +459,15 @@
 .jstree-default .jstree-anchor > .jstree-undetermined:hover {
   background-position: -196px -36px;
 }
+.jstree-default .jstree-checkbox-disabled {
+  opacity: 0.8;
+  filter: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'jstree-grayscale\'><feColorMatrix type=\'matrix\' values=\'0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0\'/></filter></svg>#jstree-grayscale");
+  /* Firefox 10+ */
+  filter: gray;
+  /* IE6-9 */
+  -webkit-filter: grayscale(100%);
+  /* Chrome 19+ & Safari 6+ */
+}
 .jstree-default > .jstree-striped {
   background-size: auto 48px;
 }
@@ -616,6 +632,15 @@
 .jstree-default-small .jstree-anchor > .jstree-undetermined:hover {
   background-position: -199px -39px;
 }
+.jstree-default-small .jstree-checkbox-disabled {
+  opacity: 0.8;
+  filter: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'jstree-grayscale\'><feColorMatrix type=\'matrix\' values=\'0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0\'/></filter></svg>#jstree-grayscale");
+  /* Firefox 10+ */
+  filter: gray;
+  /* IE6-9 */
+  -webkit-filter: grayscale(100%);
+  /* Chrome 19+ & Safari 6+ */
+}
 .jstree-default-small > .jstree-striped {
   background-size: auto 36px;
 }
@@ -779,6 +804,15 @@
 }
 .jstree-default-large .jstree-anchor > .jstree-undetermined:hover {
   background-position: -192px -32px;
+}
+.jstree-default-large .jstree-checkbox-disabled {
+  opacity: 0.8;
+  filter: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'jstree-grayscale\'><feColorMatrix type=\'matrix\' values=\'0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0\'/></filter></svg>#jstree-grayscale");
+  /* Firefox 10+ */
+  filter: gray;
+  /* IE6-9 */
+  -webkit-filter: grayscale(100%);
+  /* Chrome 19+ & Safari 6+ */
 }
 .jstree-default-large > .jstree-striped {
   background-size: auto 64px;
@@ -995,7 +1029,7 @@
   .jstree-default-responsive .jstree-node > .jstree-ocl,
   .jstree-default-responsive .jstree-themeicon,
   .jstree-default-responsive .jstree-checkbox {
-    background-image: url("images/40px.png");
+    background-image: url("40px.png");
     background-size: 120px 240px;
   }
   .jstree-default-responsive .jstree-node {
