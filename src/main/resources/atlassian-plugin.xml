@@ -59,28 +59,14 @@
 		</description>
 		<label key="add-pagetree.linklabel" />
 		<link linkId="add-pagetree-link-id" />
+		<condition class="com.atlassian.confluence.plugin.descriptor.web.conditions.SpacePermissionCondition">
+			<param name="permission">administer</param>
+		</condition>
 	</web-item>
 
-	<xwork name="Page Tree Create" key="page-tree-create">
-		<description>Creates pages according to received page tree in JSON
-			format
-		</description>
-		<package name="page-tree-create-xwork-package" extends="default"
-			namespace="/plugins/${project.artifactId}">
-			<default-interceptor-ref name="validatingStack" />
-
-			<action name="create-page-tree"
-				class="com.networkedassets.plugins.add_pagetree.CreatePageTreeAction"
-				method="addPages">
-				<result name="success" type="velocity">
-					/templates/create-page-tree-succ.vm
-				</result>
-				<result name="error" type="velocity">
-					/templates/create-page-tree-fail.vm
-				</result>
-			</action>
-		</package>
-	</xwork>
+	<rest key="rest" path="/pagetree" version="1.0">
+		<description>Provides REST endpoints used by pagetree plugin</description>
+	</rest>
 
 	<!-- imports -->
 	<component-import key="applicationProperties"
