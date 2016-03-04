@@ -6,7 +6,6 @@ import com.atlassian.confluence.security.PermissionManager;
 import com.atlassian.confluence.spaces.SpaceManager;
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal;
 import com.atlassian.fugue.Either;
-import com.google.gson.Gson;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +18,7 @@ import java.util.List;
 
 @Path("/")
 public class PageTreeService {
-    private static Gson gson = new Gson();
+    @SuppressWarnings("unused")
     private static org.slf4j.Logger log = LoggerFactory.getLogger(PageTreeService.class);
     private PageManager pageManager;
     private PermissionManager permissionManager;
@@ -69,7 +68,7 @@ public class PageTreeService {
 
     private Response error(Exception exception) {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream ps = null;
+        PrintStream ps;
         try {
             ps = new PrintStream(baos, true, "utf-8");
         } catch (UnsupportedEncodingException e) {
