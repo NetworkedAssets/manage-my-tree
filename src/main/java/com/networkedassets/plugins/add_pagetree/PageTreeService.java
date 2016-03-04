@@ -5,6 +5,7 @@ import com.atlassian.confluence.pages.PageManager;
 import com.atlassian.confluence.security.PermissionManager;
 import com.atlassian.confluence.spaces.SpaceManager;
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal;
+import com.atlassian.fugue.Either;
 import com.google.gson.Gson;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 @Path("/")
@@ -30,44 +32,59 @@ public class PageTreeService {
         this.spaceManager = spaceManager;
     }
 
+    @SuppressWarnings("LoopStatementThatDoesntLoop")
     @POST
     @Path("manage")
     @Produces({"application/json"})
     @Consumes({"application/json"})
-    public Response addPages(@QueryParam("space") String space, List<JsonPage> pages) throws Exception {
-        log.warn("in addPages()");
+    public Response addPages(@QueryParam("space") String space, List<JsonPage> pages) {
+        if (isUnauthorized(space)) return error("Unauthorized");
 
-        if (permissionManager != null && permissionManager
-                .hasCreatePermission(AuthenticatedUserThreadLocal.get(), spaceManager.getSpace(space), Page.class)) {
-            log.warn("username: " + AuthenticatedUserThreadLocal.getUsername());
+        final Either<JsonPage, Response> pageOrError = validatePages(pages);
 
-            if (pageManager == null) {
-                return error("pageManager not injected!");
-            }
-
-            log.debug("pages: ", gson.toJson(pages));
-
-            if (pages == null) {
-                return error("Did not get the pagetree");
-            }
-
-            if (pages.size() != 1) {
-                return error("Invalid number of roots: " + pages.size());
-            }
-
-            try {
-                pages.get(0).addPages(pageManager);
-            } catch (final Exception e) {
-                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                final PrintStream ps = new PrintStream(baos, true, "utf-8");
-                e.printStackTrace(ps);
-                return error(baos.toString());
-            }
-
-            return success("success");
+        for (Response error : pageOrError.right()) {
+            return error;
         }
 
-        return error("Unauthorized");
+        try {
+            for (JsonPage page : pageOrError.left()) {
+                page.addPages(pageManager);
+            }
+        } catch (final Exception e) {
+            return error(e);
+        }
+
+        return success("success");
+    }
+
+    private Either<JsonPage, Response> validatePages(List<JsonPage> pages) {
+        if (pages == null) {
+            return Either.right(error("Did not get the pagetree"));
+        }
+        if (pages.size() != 1) {
+            return Either.right(error("Invalid number of roots: " + pages.size()));
+        }
+        return Either.left(pages.get(0));
+    }
+
+    private Response error(Exception exception) {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = null;
+        try {
+            ps = new PrintStream(baos, true, "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            // unreachable
+            // ...
+            throw new RuntimeException(e);
+            // better safe than sorry
+        }
+        exception.printStackTrace(ps);
+        return error(baos.toString());
+    }
+
+    private boolean isUnauthorized(@QueryParam("space") String space) {
+        return permissionManager == null || !permissionManager
+                .hasCreatePermission(AuthenticatedUserThreadLocal.get(), spaceManager.getSpace(space), Page.class);
     }
 
     private Response error(String message) {
