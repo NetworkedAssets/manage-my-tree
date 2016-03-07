@@ -1,5 +1,9 @@
 .jstree-default .jstree-icon.jstree-themeicon.icon-page.jstree-themeicon-custom {
-  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAiElEQVQoz72NMQrDMAxFdRbfqfcQmkKmQkedonMpdMk5SsmUQVf4uyHwO9ihNqZbqd6opycREXkkh1JplYn3k7TjmLkig8FgZCjnXjFudVlQ3tBVjO2aoWRc0VRGoTDxi3BgvxaOz4X/FzLGwo5GeGG83z6C48In9k5acaajCktyGHuUjiWJvAGUIE/eIh8szwAAAABJRU5ErkJggg==) 50%;
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAiElEQVQoz72NMQrDMAxFdRbfqfcQmkKmQkedonMpdMk5SsmUQVf4uyHwO9ihNqZbqd6opycREXkkh1JplYn3k7TjmLkig8FgZCjnXjFudVlQ3tBVjO2aoWRc0VRGoTDxi3BgvxaOz4X/FzLGwo5GeGG83z6C48In9k5acaajCktyGHuUjiWJvAGUIE/eIh8szwAAAABJRU5ErkJggg==) no-repeat 50% 50%;
+}
+
+.jstree-default .jstree-icon.jstree-themeicon.icon-page-added.jstree-themeicon-custom {
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAYdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuNvyMY98AAADuSURBVDhPY4CBDRs2KHV3d79Lz8n4H5IS+j80NQwF5xXn/1+7dm0oVDkmAGkuKC34n7ui8G/J/sr/5Udq4BjEBxlaVVWF25DMvMz/+WuK/yFrRMZ+if7/i6aU/MDpEpAzsWmEYacoZzCd11vwA6tLCBngEecFNgTkEpB3QC6BaoUAQgagY5B6qFYIGFwGeCf44MREGUAMHqQugCVhbDbDMEi+7FA1pgGgpJy7vPAvsi24MCjJg9RDtUIAKDNV1FX8z1tW+BdkAzaNIAzKbKXVZf9B6qFaIWDr1q3g7AwyGeQ8XBiU3UHqQOoZGBgYAJgj7+EgLEfXAAAAAElFTkSuQmCC) no-repeat 50% 50%;
 }
 
 /* jsTree default theme */

@@ -3,6 +3,7 @@ var showAddPageTreeDialog = (function ($) {
 
     var dialog = "#add-page-tree-dialog";
     var tree, callback;
+    var forDeletion = [];
 
     function fixNames(pageTrees) {
         for (var j = 0; j < pageTrees.length; ++j) {
@@ -33,14 +34,19 @@ var showAddPageTreeDialog = (function ($) {
             tree.jstree().destroy();
             fixNames(pageTrees);
             console.log(JSON.stringify(pageTrees));
-            callback(pageTrees);
+            var modificationCommand = { root: pageTrees[0], forDeletion: forDeletion };
+            callback(modificationCommand);
         });
 
         tree.on('click', 'button.add-node-btn', function (e) {
             var nodeId = $(e.target).parent().parent().attr("id");
             tree.jstree().create_node(
                 nodeId,
-                makeNode("newpage"),
+                makeNode({
+                    text: "newpage",
+                    a_attr: { data_added: true },
+                    icon: 'icon-page-added'
+                }),
                 "last",
                 function (newnode) {
                     tree.jstree().open_node(
@@ -71,7 +77,11 @@ var showAddPageTreeDialog = (function ($) {
 
         tree.on('click', 'button.rem-node-btn', function (e) {
             var nodeId = $(e.target).parent().parent().attr("id");
-            tree.jstree().delete_node(nodeId);
+            var tree_jstree = tree.jstree();
+            var node = tree_jstree.get_node(nodeId);
+            if (node.icon != 'icon-page-added') forDeletion.push(nodeId);
+
+            tree_jstree.delete_node(nodeId);
         });
     });
 
@@ -81,7 +91,8 @@ var showAddPageTreeDialog = (function ($) {
             return {
                 id: node.id,
                 text: text,
-                icon: 'icon-page',
+                icon: node.icon || 'icon-page',
+                a_attr: node.a_attr || { data_added: false },
                 children: (Array.isArray(node.children))
                     ? node.children.map(function (child) { return makeNode(child, false) })
                     : []
@@ -99,9 +110,8 @@ var showAddPageTreeDialog = (function ($) {
         if (clbck)
             callback = clbck;
         else
-            callback = function () {
-            };
-        var res = tree.jstree({
+            callback = function () {};
+        tree.jstree({
             "core": {
                 "data": [makeNode(rootpage, true)],
                 "check_callback": true,
@@ -126,12 +136,13 @@ var showAddPageTreeDialog = (function ($) {
 })(jQuery_1_11);
 
 function setupPageTree(tree) {
-    showAddPageTreeDialog(tree, function (pageTrees) {
-        if (pageTrees) {
+    showAddPageTreeDialog(tree, function (modificationCommand) {
+        eval("debugger;");
+        if (modificationCommand) {
             $.ajax({
                 type: "POST",
                 url: Confluence.getBaseUrl() + "/rest/pagetree/1.0/manage?space=" + AJS.params.spaceKey,
-                data: JSON.stringify(pageTrees),
+                data: JSON.stringify(modificationCommand),
                 contentType: "application/json",
                 dataType: "json",
                 success: function (data) {

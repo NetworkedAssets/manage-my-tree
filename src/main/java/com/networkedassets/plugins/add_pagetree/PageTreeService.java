@@ -8,6 +8,7 @@ import com.atlassian.confluence.spaces.SpaceManager;
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal;
 import com.atlassian.fugue.Either;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.annotate.JsonProperty;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
@@ -16,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Path("/")
@@ -38,18 +40,18 @@ public class PageTreeService {
     @Path("manage")
     @Produces({"application/json"})
     @Consumes({"application/json"})
-    public Response addPages(@QueryParam("space") String space, List<JsonPage> pages) {
+    public Response addPages(@QueryParam("space") String space, ManagePagesCommand managePagesCommand) {
         if (isUnauthorized(space)) return error("Unauthorized");
 
-        final Either<JsonPage, Response> pageOrError = validatePages(pages);
+        final Either<ManagePagesCommand, Response> commandOrError = validateCommand(managePagesCommand);
 
-        for (Response error : pageOrError.right()) {
+        for (Response error : commandOrError.right()) {
             return error;
         }
 
         try {
-            for (JsonPage page : pageOrError.left()) {
-                page.addPageAndChildrenTo(pageManager);
+            for (ManagePagesCommand command : commandOrError.left()) {
+                command.execute(pageManager);
             }
         } catch (final Exception e) {
             return error(e);
@@ -58,14 +60,11 @@ public class PageTreeService {
         return success("success");
     }
 
-    private Either<JsonPage, Response> validatePages(List<JsonPage> pages) {
-        if (pages == null) {
+    private Either<ManagePagesCommand, Response> validateCommand(ManagePagesCommand command) {
+        if (command == null || command.root == null || command.forDeletion == null) {
             return Either.right(error("Did not get the pagetree"));
         }
-        if (pages.size() != 1) {
-            return Either.right(error("Invalid number of roots: " + pages.size()));
-        }
-        return Either.left(pages.get(0));
+        return Either.left(command);
     }
 
     @GET
@@ -134,34 +133,76 @@ public class PageTreeService {
         public String id;
         public String text;
         public List<JsonPage> children;
-
-        private Page addPageAndChildrenTo(PageManager pageManager) {
-            final Page page = pageManager.getPage(Long.parseLong(id));
-            for (final JsonPage child : children) {
-                child.setParent(page, pageManager);
-            }
-            return page;
-        }
-
-        private void setParent(Page parent, PageManager pageManager) {
-            final Page page = new Page();
-            page.setTitle(text);
-            page.setSpace(parent.getSpace());
-            page.setParentPage(parent);
-            parent.addChild(page);
-            page.setVersion(1);
-            pageManager.saveContentEntity(page, null);
-            for (final JsonPage child : children) {
-                child.setParent(page, pageManager);
-            }
-        }
+        @JsonProperty("data_added")
+        public Attr attr;
+        public String icon = "icon-page";
 
         public static JsonPage from(Page page) {
             JsonPage jpage = new JsonPage();
             jpage.id = Long.toString(page.getId());
             jpage.text = page.getDisplayTitle();
             jpage.children = page.getChildren().stream().map(JsonPage::from).collect(Collectors.toList());
+            jpage.attr = new Attr();
+            jpage.attr.isAdded = false;
             return jpage;
+        }
+
+        private Page addPageAndChildrenTo(PageManager pageManager) {
+            final Page page = pageManager.getPage(Long.parseLong(id));
+            renameIfNecessary(page);
+            for (final JsonPage child : children) {
+                child.setParent(page, pageManager);
+            }
+            return page;
+        }
+
+        private void renameIfNecessary(Page page) {
+            if (!Objects.equals(page.getTitle(), text)) {
+                page.setTitle(text);
+            }
+        }
+
+        private void setParent(Page parent, PageManager pageManager) {
+            Page page;
+            if (attr.isAdded) {
+                page = new Page();
+                page.setTitle(text);
+                page.setSpace(parent.getSpace());
+                page.setParentPage(parent);
+                parent.addChild(page);
+                page.setVersion(1);
+                pageManager.saveContentEntity(page, null);
+            } else {
+                page = Objects.requireNonNull(pageManager.getPage(Long.parseLong(id)));
+                renameIfNecessary(page);
+                if (!Objects.equals(page.getParent(), parent))
+                    pageManager.movePageAsChild(page, parent);
+            }
+            for (final JsonPage child : children) {
+                child.setParent(page, pageManager);
+            }
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        private static class Attr {
+            @JsonProperty("data_added")
+            public boolean isAdded = false;
+        }
+    }
+
+    private static class ManagePagesCommand {
+        JsonPage root;
+        List<String> forDeletion;
+
+        public void execute(PageManager pageManager) {
+            for (String sid : forDeletion) {
+                final Page pageToDelete = pageManager.getPage(Long.parseLong(sid));
+//                pageToDelete. // TODO: trash page and all its children
+            }
+
+
+            JsonPage page = root;
+            page.addPageAndChildrenTo(pageManager);
         }
     }
 }
