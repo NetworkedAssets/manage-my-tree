@@ -1,6 +1,5 @@
 // callback runs when user exits the dialog
 var showAddPageTreeDialog = (function ($) {
-
     var dialog = "#add-page-tree-dialog";
     var tree, callback;
     var forDeletion = [];
@@ -174,7 +173,7 @@ AJS.toInit(function () {
                 url: Confluence.getBaseUrl() + "/rest/pagetree/1.0/pagetree?space=" + AJS.params.spaceKey,
                 dataType: "json",
                 success: setupPageTree,
-                error: function() {eval("debugger")}
+                error: function() {eval("debugger;")}
             });
         });
     } else {

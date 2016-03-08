@@ -16,6 +16,7 @@ import javax.ws.rs.core.Response;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -114,6 +115,8 @@ public class PageTreeService {
         return error(baos.toString());
     }
 
+
+
     private Response success(String message) {
         return Response.ok(new JsonMessage(200, message)).build();
     }
@@ -133,7 +136,7 @@ public class PageTreeService {
         public String id;
         public String text;
         public List<JsonPage> children;
-        @JsonProperty("data_added")
+        @JsonProperty("a_attr")
         public Attr attr;
         public String icon = "icon-page";
 
@@ -177,7 +180,10 @@ public class PageTreeService {
                 renameIfNecessary(page);
                 if (!Objects.equals(page.getParent(), parent))
                     pageManager.movePageAsChild(page, parent);
+                else
+                    pageManager.saveContentEntity(page, null); // movePageAsChild already saves
             }
+
             for (final JsonPage child : children) {
                 child.setParent(page, pageManager);
             }
@@ -191,18 +197,22 @@ public class PageTreeService {
     }
 
     private static class ManagePagesCommand {
-        JsonPage root;
-        List<String> forDeletion;
+        public JsonPage root;
+        public List<String> forDeletion;
 
         public void execute(PageManager pageManager) {
+            root.addPageAndChildrenTo(pageManager);
+
             for (String sid : forDeletion) {
                 final Page pageToDelete = pageManager.getPage(Long.parseLong(sid));
-//                pageToDelete. // TODO: trash page and all its children
+                deleteWithDescendants(pageToDelete, pageManager);
             }
+        }
 
-
-            JsonPage page = root;
-            page.addPageAndChildrenTo(pageManager);
+        private void deleteWithDescendants(Page page, PageManager pageManager) {
+            new ArrayList<>(page.getChildren()).forEach(p -> this.deleteWithDescendants(p, pageManager));
+            page.trash();
+            pageManager.saveContentEntity(page, null);
         }
     }
 }
