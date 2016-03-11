@@ -9,6 +9,7 @@ import com.atlassian.confluence.user.AuthenticatedUserThreadLocal;
 import com.atlassian.fugue.Either;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 @Path("/")
 public class PageTreeService {
     @SuppressWarnings("unused")
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(PageTreeService.class);
+    private static Logger log = LoggerFactory.getLogger(PageTreeService.class);
     private PageManager pageManager;
     private PermissionManager permissionManager;
     private SpaceManager spaceManager;
@@ -144,28 +145,32 @@ public class PageTreeService {
             JsonPage jpage = new JsonPage();
             jpage.id = Long.toString(page.getId());
             jpage.text = page.getDisplayTitle();
-            jpage.children = page.getChildren().stream().map(JsonPage::from).collect(Collectors.toList());
+            jpage.children = page.getSortedChildren().stream().map(JsonPage::from).collect(Collectors.toList());
             jpage.attr = new Attr();
-            jpage.attr.isAdded = false;
             return jpage;
         }
 
-        private Page addPageAndChildrenTo(PageManager pageManager) {
-            final Page page = pageManager.getPage(Long.parseLong(id));
-            renameIfNecessary(page);
-            for (final JsonPage child : children) {
-                child.setParent(page, pageManager);
-            }
+        private Page modifyRootPageAndChildren(PageManager pageManager) {
+            Page page = Objects.requireNonNull(pageManager.getPage(Long.parseLong(id)));
+            renamePageIfNecessary(page, pageManager);
+
+            createOrUpdateChildren(pageManager, page);
+
             return page;
         }
 
-        private void renameIfNecessary(Page page) {
-            if (!Objects.equals(page.getTitle(), text)) {
-                page.setTitle(text);
+        private void createOrUpdateChildren(PageManager pageManager, Page page) {
+            List<Long> childrenIds = new ArrayList<>();
+
+            for (final JsonPage child : children) {
+                long id = child.createOrUpdate(page, pageManager);
+                childrenIds.add(id);
             }
+
+            setChildrenOrder(page, childrenIds, pageManager);
         }
 
-        private void setParent(Page parent, PageManager pageManager) {
+        private long createOrUpdate(Page parent, PageManager pageManager) {
             Page page;
             if (attr.isAdded) {
                 page = new Page();
@@ -177,15 +182,28 @@ public class PageTreeService {
                 pageManager.saveContentEntity(page, null);
             } else {
                 page = Objects.requireNonNull(pageManager.getPage(Long.parseLong(id)));
-                renameIfNecessary(page);
-                if (!Objects.equals(page.getParent(), parent))
-                    pageManager.movePageAsChild(page, parent);
-                else
-                    pageManager.saveContentEntity(page, null); // movePageAsChild already saves
+                renamePageIfNecessary(page, pageManager);
+                movePageIfNecessary(page, parent, pageManager);
             }
 
-            for (final JsonPage child : children) {
-                child.setParent(page, pageManager);
+            createOrUpdateChildren(pageManager, page);
+
+            return page.getId();
+        }
+
+        private void setChildrenOrder(Page page, List<Long> childrenIds, PageManager pageManager) {
+            pageManager.setChildPageOrder(page, childrenIds);
+        }
+
+        private void movePageIfNecessary(Page page, Page parent, PageManager pageManager) {
+            if (!Objects.equals(page.getParent(), parent)) {
+                pageManager.movePageAsChild(page, parent);
+            }
+        }
+
+        private void renamePageIfNecessary(Page page, PageManager pageManager) {
+            if (!Objects.equals(page.getTitle(), text)) {
+                pageManager.renamePage(page, text);
             }
         }
 
@@ -201,7 +219,7 @@ public class PageTreeService {
         public List<String> forDeletion;
 
         public void execute(PageManager pageManager) {
-            root.addPageAndChildrenTo(pageManager);
+            root.modifyRootPageAndChildren(pageManager);
 
             for (String sid : forDeletion) {
                 final Page pageToDelete = pageManager.getPage(Long.parseLong(sid));
@@ -211,8 +229,7 @@ public class PageTreeService {
 
         private void deleteWithDescendants(Page page, PageManager pageManager) {
             new ArrayList<>(page.getChildren()).forEach(p -> this.deleteWithDescendants(p, pageManager));
-            page.trash();
-            pageManager.saveContentEntity(page, null);
+            pageManager.trashPage(page);
         }
     }
 }
