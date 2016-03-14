@@ -55,7 +55,7 @@
             /> -->
     </web-panel>
 
-    <web-item name="Add pageTree - link" key="add-pagetree-link"
+    <web-item name="Manage pageTree - link" key="add-pagetree-link"
               section="system.content.action/modify" weight="999">
         <description key="add-pagetree-link.description">
             Link for bulk adding pages (page trees)
