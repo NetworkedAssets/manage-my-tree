@@ -1,4 +1,4 @@
-package com.networkedassets.plugins.add_pagetree;
+package com.networkedassets.plugins.addpagetree;
 
 import com.atlassian.confluence.pages.Page;
 import com.atlassian.confluence.pages.PageManager;

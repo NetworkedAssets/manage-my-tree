@@ -22,6 +22,7 @@
                   location="/js/jstree/themes/default/style.css"/>
 
         <resource type="download" name="add-pagetree.css" location="/css/add-pagetree.css"/>
+        <resource type="download" name="command.js" location="/js/command.js" />
         <resource type="download" name="add-pagetree.js" location="/js/add-pagetree.js"/>
 
         <resource type="download" name="images/" location="/images"/>

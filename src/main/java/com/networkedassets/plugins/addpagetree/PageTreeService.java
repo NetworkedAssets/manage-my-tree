@@ -1,4 +1,4 @@
-package com.networkedassets.plugins.add_pagetree;
+package com.networkedassets.plugins.addpagetree;
 
 import com.atlassian.confluence.pages.Page;
 import com.atlassian.confluence.pages.PageManager;
@@ -8,6 +8,7 @@ import com.atlassian.confluence.spaces.Space;
 import com.atlassian.confluence.spaces.SpaceManager;
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal;
 import com.atlassian.fugue.Either;
+import com.networkedassets.plugins.addpagetree.managepages.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,17 +37,17 @@ public class PageTreeService {
     @Path("manage")
     @Produces({"application/json"})
     @Consumes({"application/json"})
-    public Response managePages(@QueryParam("space") String space, ManagePagesCommand managePagesCommand) {
+    public Response managePages(@QueryParam("space") String space, Command managePagesCommand) {
         if (isUnauthorized(space)) return error("Unauthorized");
 
-        final Either<ManagePagesCommand, Response> commandOrError = validateCommand(managePagesCommand);
+        final Either<Command, Response> commandOrError = validateCommand(managePagesCommand);
 
         for (Response error : commandOrError.right()) {
             return error;
         }
 
         try {
-            for (ManagePagesCommand command : commandOrError.left()) {
+            for (Command command : commandOrError.left()) {
                 command.execute(pageManager);
             }
         } catch (final Exception e) {
@@ -56,8 +57,8 @@ public class PageTreeService {
         return success("success");
     }
 
-    private Either<ManagePagesCommand, Response> validateCommand(ManagePagesCommand command) {
-        if (command == null || command.root == null || command.forDeletion == null) {
+    private Either<Command, Response> validateCommand(Command command) {
+        if (command == null /** || command.root == null || command.forDeletion == null **/) {
             return Either.right(error("Did not get the page tree"));
         }
         return Either.left(command);
