@@ -9,6 +9,7 @@ import com.atlassian.confluence.spaces.SpaceManager;
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal;
 import com.atlassian.fugue.Either;
 import com.networkedassets.plugins.addpagetree.managepages.Command;
+import com.networkedassets.plugins.addpagetree.managepages.ExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +18,7 @@ import javax.ws.rs.core.Response;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 @Path("/")
 public class PageTreeService {
@@ -37,18 +39,21 @@ public class PageTreeService {
     @Path("manage")
     @Produces({"application/json"})
     @Consumes({"application/json"})
-    public Response managePages(@QueryParam("space") String space, Command managePagesCommand) {
+    public Response managePages(@QueryParam("space") String space, List<Command> managePagesCommand) {
         if (isUnauthorized(space)) return error("Unauthorized");
 
-        final Either<Command, Response> commandOrError = validateCommand(managePagesCommand);
+        final Either<List<Command>, Response> commandOrError = validateCommands(managePagesCommand);
 
         for (Response error : commandOrError.right()) {
             return error;
         }
 
         try {
-            for (Command command : commandOrError.left()) {
-                command.execute(pageManager);
+            ExecutionContext ec = new ExecutionContext();
+            for (List<Command> commands : commandOrError.left()) {
+                for (Command command : commands) {
+                    command.execute(pageManager, ec);
+                }
             }
         } catch (final Exception e) {
             return error(e);
@@ -57,11 +62,11 @@ public class PageTreeService {
         return success("success");
     }
 
-    private Either<Command, Response> validateCommand(Command command) {
-        if (command == null /** || command.root == null || command.forDeletion == null **/) {
-            return Either.right(error("Did not get the page tree"));
+    private Either<List<Command>, Response> validateCommands(List<Command> commands) {
+        if (commands == null || commands.isEmpty()) {
+            return Either.right(error("Did not get the modification commands"));
         }
-        return Either.left(command);
+        return Either.left(commands);
     }
 
     @GET

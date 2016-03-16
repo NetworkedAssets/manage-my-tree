@@ -55,6 +55,7 @@ var showAddPageTreeDialog = (function ($) {
                                 newnode.id,
                                 "newnode",
                                 function (node) {
+                                    ManagePagetreeCommand.addPage(node.text, nodeId, node.id);
                                     tree.jstree().rename_node(
                                         node.id,
                                         makeNode(node.text));
@@ -70,17 +71,20 @@ var showAddPageTreeDialog = (function ($) {
                 return;
             var name = node.text.split('<')[0];
             tree.jstree().edit(nodeId, name, function (node) {
+                ManagePagetreeCommand.renamePage(node.id, node.text);
                 tree.jstree().rename_node(node.id, makeNode(node.text));
             });
         });
 
         tree.on('click', 'button.rem-node-btn', function (e) {
             var nodeId = $(e.target).parent().parent().attr("id");
-            var tree_jstree = tree.jstree();
-            var node = tree_jstree.get_node(nodeId);
-            if (node.icon != 'icon-page-added') forDeletion.push(nodeId);
+            tree.jstree().delete_node(nodeId);
+            ManagePagetreeCommand.removePage(nodeId);
+        });
 
-            tree_jstree.delete_node(nodeId);
+        tree.on('move_node.jstree', function (e, data) {
+            console.log("moved node: " + data.node.id + ", parent: " + data.parent + ", pos: " + data.position);
+            ManagePagetreeCommand.movePage(data.node.id, data.parent, data.position)
         });
     });
 
@@ -137,30 +141,7 @@ var showAddPageTreeDialog = (function ($) {
 function setupPageTree(tree) {
     showAddPageTreeDialog(tree, function (modificationCommand) {
         eval("debugger;");
-        if (modificationCommand) {
-            $.ajax({
-                type: "POST",
-                url: Confluence.getBaseUrl() + "/rest/pagetree/1.0/manage?space=" + AJS.params.spaceKey,
-                data: JSON.stringify(modificationCommand),
-                contentType: "application/json",
-                dataType: "json",
-                success: function (data) {
-                    console.log(JSON.stringify(data));
-                    if (data.status == 500)
-                        alert(data.message);
-                    else
-                        location.reload();
-                },
-                error: function (data) {
-                    data = JSON.parse(data.responseText);
-                    console.log(JSON.stringify(data));
-                    if (data.status == 500)
-                        alert(data.message);
-                    else
-                        location.reload();
-                }
-            });
-        }
+        ManagePagetreeCommand.send();
     });
 }
 AJS.toInit(function () {

@@ -26,23 +26,28 @@ class ManagePagesCommandDeserializer : JsonDeserializer<Command>() {
     private fun addPage(jtree: JsonNode?): Command.AddPage? {
         if (jtree == null) return null
 
-        var parentIdNode: JsonNode? = jtree["parentId"]
-        parentIdNode = if (parentIdNode?.isIntegralNumber ?: false) parentIdNode else return null
-        val parentId = parentIdNode!!.longValue
-
         var nameNode: JsonNode? = jtree["name"]
         nameNode = if (nameNode?.isTextual ?: false) nameNode else return null
         val name = nameNode!!.textValue
 
-        return Command.AddPage(name, parentId)
+        var newPageJstreeIdNode: JsonNode? = jtree["newPageJstreeId"]
+        newPageJstreeIdNode = if (newPageJstreeIdNode?.isTextual ?: false) newPageJstreeIdNode else return null
+        val newPageJstreeId = newPageJstreeIdNode!!.textValue
+
+        var parentIdNode: JsonNode? = jtree["parentId"]
+        parentIdNode = if (parentIdNode?.isTextual ?: false) parentIdNode else return null
+        val parentId = parentIdNode!!.textValue
+
+
+        return Command.AddPage(name, newPageJstreeId, parentId)
     }
 
     private fun removePage(jtree: JsonNode?): Command.RemovePage? {
         if (jtree == null) return null
 
         var pageIdNode: JsonNode? = jtree["pageId"]
-        pageIdNode = if (pageIdNode?.isIntegralNumber ?: false) pageIdNode else return null
-        val pageId = pageIdNode!!.longValue
+        pageIdNode = if (pageIdNode?.isTextual ?: false) pageIdNode else return null
+        val pageId = pageIdNode!!.textValue
 
         return Command.RemovePage(pageId)
     }
@@ -51,12 +56,12 @@ class ManagePagesCommandDeserializer : JsonDeserializer<Command>() {
         if (jtree == null) return null
 
         var pageIdNode: JsonNode? = jtree["pageId"]
-        pageIdNode = if (pageIdNode?.isIntegralNumber ?: false) pageIdNode else return null
-        val pageId = pageIdNode!!.longValue
+        pageIdNode = if (pageIdNode?.isTextual ?: false) pageIdNode else return null
+        val pageId = pageIdNode!!.textValue
 
         var newParentNode: JsonNode? = jtree["newParentId"]
-        newParentNode = if (newParentNode?.isIntegralNumber ?: false) newParentNode else null
-        val newParentId = newParentNode?.longValue
+        newParentNode = if (newParentNode?.isTextual ?: false) newParentNode else null
+        val newParentId = newParentNode?.textValue
 
         var newPosNode: JsonNode? = jtree["newPosition"]
         newPosNode = if (newPosNode?.isIntegralNumber ?: false) newPosNode else null
@@ -69,8 +74,8 @@ class ManagePagesCommandDeserializer : JsonDeserializer<Command>() {
         if (jtree == null) return null
 
         var pageIdNode: JsonNode? = jtree["pageId"]
-        pageIdNode = if (pageIdNode?.isIntegralNumber ?: false) pageIdNode else return null
-        val pageId = pageIdNode!!.longValue
+        pageIdNode = if (pageIdNode?.isTextual ?: false) pageIdNode else return null
+        val pageId = pageIdNode!!.textValue
 
         val newName = jtree["newName"]?.textValue ?: return null
 
@@ -87,6 +92,7 @@ class AddPageSerializer : JsonSerializer<Command.AddPage>() {
         val addComm = JsonNodeFactory.instance.objectNode()
         addComm.put("commandType", "addPage")
         addComm.put("name", command.name)
+        addComm.put("newPageJstreeId", command.newPageJstreeId)
         addComm.put("parentId", command.parentId)
         jgen.writeTree(addComm)
     }
