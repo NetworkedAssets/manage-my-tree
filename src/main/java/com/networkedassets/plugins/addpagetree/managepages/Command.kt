@@ -1,7 +1,13 @@
 package com.networkedassets.plugins.addpagetree.managepages
 
+import com.atlassian.confluence.api.service.exceptions.PermissionException
 import com.atlassian.confluence.pages.Page
 import com.atlassian.confluence.pages.PageManager
+import com.atlassian.confluence.security.Permission
+import com.atlassian.confluence.security.PermissionManager
+import com.atlassian.confluence.spaces.Space
+import com.atlassian.confluence.user.AuthenticatedUserThreadLocal
+import com.atlassian.confluence.user.ConfluenceUser
 import org.codehaus.jackson.map.annotate.JsonDeserialize
 import org.codehaus.jackson.map.annotate.JsonSerialize
 import java.util.*
@@ -9,7 +15,23 @@ import java.util.*
 /**
  * Used to store mappings from jstree ids to page ids needed in single command list execution
  */
-class ExecutionContext(val m: MutableMap<String, Long> = HashMap()): MutableMap<String, Long> by m
+// for people not familiar with Kotlin:
+//  "constructor(...)" after the class name is the default constructor
+//  "constructor" keyword is optional, unless you want to use annotations
+//  "val" and "var" in constructor params mean that the class has a property (field + getter + (if var) setter) that has the same name
+//  "@JvmOverloads" allows you to use default parameters in other languages (i.e. Java)
+//  ":" means "implements"/"extends" from Java
+//  "by m" generates implementations for all the methods in the interface/class that delegate to m
+class ExecutionContext
+@JvmOverloads constructor(val permissionManager: PermissionManager, val space: Space, val m: MutableMap<String, Long> = HashMap())
+: MutableMap<String, Long> by m {
+    val user: ConfluenceUser
+        get() = AuthenticatedUserThreadLocal.get()
+
+    fun canCreate(p: Page) = permissionManager.hasCreatePermission(user, space, p)
+    fun canRemove(p: Page) = permissionManager.hasPermission(user, Permission.REMOVE, p)
+    fun canEdit(p: Page)   = permissionManager.hasPermission(user, Permission.EDIT, p)
+}
 
 @JsonDeserialize(using = ManagePagesCommandDeserializer::class)
 sealed class Command : (PageManager, ExecutionContext) -> Unit {
@@ -26,13 +48,17 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             page.setParentPage(parent)
             parent.addChild(page)
             page.version = 1
+
+            if (!ec.canCreate(page))
+                throw PermissionException("""Cannot create page "${page.title}": insufficient permissions!""")
+
             pageManager.saveContentEntity(page, null)
 
             ec[newPageJstreeId] = page.id
         }
 
         //region equals, hashCode, toString
-        override fun equals(other: Any?): Boolean{
+        override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other?.javaClass != javaClass) return false
 
@@ -45,14 +71,14 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             return true
         }
 
-        override fun hashCode(): Int{
+        override fun hashCode(): Int {
             var result = name.hashCode()
             result += 31 * result + newPageJstreeId.hashCode()
             result += 31 * result + parentId.hashCode()
             return result
         }
 
-        override fun toString(): String{
+        override fun toString(): String {
             return "AddPage(name='$name', newPageJstreeId='$newPageJstreeId', parentId='$parentId')"
         }
         //endregion
@@ -62,12 +88,15 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
     class RemovePage(val pageId: String) : Command() {
         override fun execute(pageManager: PageManager, ec: ExecutionContext) {
             val page = pageManager.getPage(pageId, ec)
-            removePage(page, pageManager)
+            removePage(page, pageManager, ec)
         }
 
-        private fun removePage(page: Page, pageManager: PageManager) {
+        private fun removePage(page: Page, pageManager: PageManager, ec: ExecutionContext) {
+            if (!ec.canRemove(page))
+                throw PermissionException("""Cannot remove page "${page.title}": insufficient permissions!""")
+
             val children = ArrayList(page.children)
-            children.forEach { removePage(it, pageManager) }
+            children.forEach { removePage(it, pageManager, ec) }
             pageManager.trashPage(page)
         }
 
@@ -97,6 +126,9 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
     class MovePage(val pageId: String, val newParentId: String?, val newPosition: Int?) : Command() {
         override fun execute(pageManager: PageManager, ec: ExecutionContext) {
             val page = pageManager.getPage(pageId, ec)
+
+            if (!ec.canCreate(page) || !ec.canRemove(page) || !ec.canEdit(page))
+                throw PermissionException("""Cannot move page "${page.title}": insufficient permissions!""")
 
             moveAsChildIfNecessary(page, newParentId, pageManager, ec)
             moveInHierarchyIfNecessary(page, newPosition, pageManager)
@@ -130,7 +162,7 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
         }
 
         //region equals, hashCode, toString
-        override fun equals(other: Any?): Boolean{
+        override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other?.javaClass != javaClass) return false
 
@@ -143,14 +175,14 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             return true
         }
 
-        override fun hashCode(): Int{
+        override fun hashCode(): Int {
             var result = pageId.hashCode()
             result += 31 * result + (newParentId?.hashCode() ?: 0)
             result += 31 * result + (newPosition ?: 0)
             return result
         }
 
-        override fun toString(): String{
+        override fun toString(): String {
             return "MovePage(pageId=$pageId, newParentId=$newParentId, newPosition=$newPosition)"
         }
         //endregion
@@ -160,6 +192,9 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
     class RenamePage(val pageId: String, val newName: String) : Command() {
         override fun execute(pageManager: PageManager, ec: ExecutionContext) {
             val page = pageManager.getPage(pageId, ec)
+
+            if (!ec.canEdit(page))
+                throw PermissionException("""Cannot rename page "${page.title}": insufficient permisions!""")
 
             if (page.title != newName)
                 pageManager.renamePage(page, newName)

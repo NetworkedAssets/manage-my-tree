@@ -15,9 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 @Path("/")
@@ -40,7 +37,9 @@ public class PageTreeService {
     @Produces({"application/json"})
     @Consumes({"application/json"})
     public Response managePages(@QueryParam("space") String space, List<Command> managePagesCommand) {
-        if (isUnauthorized(space)) return error("Unauthorized");
+        Space s = spaceManager.getSpace(space);
+
+        if (isUnauthorized(s)) return error("Unauthorized");
 
         final Either<List<Command>, Response> commandOrError = validateCommands(managePagesCommand);
 
@@ -49,7 +48,7 @@ public class PageTreeService {
         }
 
         try {
-            ExecutionContext ec = new ExecutionContext();
+            ExecutionContext ec = new ExecutionContext(permissionManager, s);
             for (List<Command> commands : commandOrError.left()) {
                 for (Command command : commands) {
                     command.execute(pageManager, ec);
@@ -93,27 +92,12 @@ public class PageTreeService {
                 .hasPermission(AuthenticatedUserThreadLocal.get(), Permission.ADMINISTER, space);
     }
 
-    private boolean isUnauthorized(String spaceKey) {
-        return isUnauthorized(spaceManager.getSpace(spaceKey));
-    }
-
     private Response error(String message) {
         return Response.status(500).entity(new JsonMessage(500, message)).build();
     }
 
     private Response error(Exception exception) {
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream ps;
-        try {
-            ps = new PrintStream(baos, true, "utf-8");
-        } catch (UnsupportedEncodingException e) {
-            // unreachable
-            // ...
-            throw new RuntimeException(e);
-            // better safe than sorry
-        }
-        exception.printStackTrace(ps);
-        return error(baos.toString());
+        return error(exception.getLocalizedMessage());
     }
 
     private Response success(String message) {
