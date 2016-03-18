@@ -127,7 +127,7 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
         override fun execute(pageManager: PageManager, ec: ExecutionContext) {
             val page = pageManager.getPage(pageId, ec)
 
-            if (!ec.canCreate(page) || !ec.canRemove(page) || !ec.canEdit(page))
+            if (!ec.canEdit(page))
                 throw PermissionException("""Cannot move page "${page.title}": insufficient permissions!""")
 
             moveAsChildIfNecessary(page, newParentId, pageManager, ec)

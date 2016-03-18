@@ -77,7 +77,23 @@ public class PageTreeService {
 
         Page page = pageFromSpaceOrHomepage(rootId, space);
 
-        return Response.ok(JsonPage.from(page)).build();
+        final boolean canCreate = permissionManager.hasCreatePermission(AuthenticatedUserThreadLocal.get(), space, Page.class);
+        PageTreeInfo pageTreeInfo = new PageTreeInfo(canCreate, JsonPage.from(page,
+                AuthenticatedUserThreadLocal.get(),
+                permissionManager));
+
+        return Response.ok(pageTreeInfo).build();
+    }
+
+    @SuppressWarnings("WeakerAccess") // has to be public for jackson to be happy
+    public static class PageTreeInfo {
+        public boolean canCreate;
+        public JsonPage pageTree;
+
+        public PageTreeInfo(boolean canCreate, JsonPage pageTree) {
+            this.canCreate = canCreate;
+            this.pageTree = pageTree;
+        }
     }
 
     private Page pageFromSpaceOrHomepage(Long pageId, Space space) {
@@ -89,7 +105,7 @@ public class PageTreeService {
 
     private boolean isUnauthorized(Space space) {
         return permissionManager == null || !permissionManager
-                .hasPermission(AuthenticatedUserThreadLocal.get(), Permission.ADMINISTER, space);
+                .hasPermission(AuthenticatedUserThreadLocal.get(), Permission.VIEW, space);
     }
 
     private Response error(String message) {

@@ -23,7 +23,7 @@
 
         <resource type="download" name="add-pagetree.css" location="/css/add-pagetree.css"/>
         <resource type="download" name="command.js" location="/js/command.js" />
-        <resource type="download" name="add-pagetree.js" location="/js/add-pagetree.js"/>
+        <resource type="download" name="manage-pagetree.js" location="/js/manage-pagetree.js"/>
 
         <resource type="download" name="images/" location="/images"/>
 
@@ -52,8 +52,6 @@
     <web-panel key="pagetree_dialog" location="atl.general">
         <resource name="view" type="soy"
                   location="com.networkedassets.plugins.add-pagetree:soy-templates/Confluence.Templates.AddPagetree.addPageTreeDialog"/>
-        <!-- <condition class="com.atlassian.confluence.plugin.descriptor.web.conditions.HasSpaceCondition"
-            /> -->
     </web-panel>
 
     <web-item name="Manage pageTree - link" key="add-pagetree-link"
@@ -63,9 +61,6 @@
         </description>
         <label key="add-pagetree.linklabel"/>
         <link linkId="add-pagetree-link-id"/>
-        <condition class="com.atlassian.confluence.plugin.descriptor.web.conditions.SpacePermissionCondition">
-            <param name="permission">administer</param>
-        </condition>
     </web-item>
 
     <rest key="rest" path="/pagetree" version="1.0">

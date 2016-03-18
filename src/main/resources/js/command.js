@@ -33,6 +33,7 @@ ManagePagetreeCommand = (function ($, undefined) {
             });
         },
         send: function () {
+            eval("debugger");
             $.ajax({
                 type: "POST",
                 url: Confluence.getBaseUrl() + "/rest/pagetree/1.0/manage?space=" + AJS.params.spaceKey,
