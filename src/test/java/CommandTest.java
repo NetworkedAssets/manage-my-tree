@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class CommandTest {
     @Test
-    public void testSeializeCommand() throws IOException {
+    public void testSerializeCommand() throws IOException {
         final ObjectMapper om = new ObjectMapper();
 
         final Command ap = new Command.AddPage("a", "j1", "2");
