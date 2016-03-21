@@ -39,11 +39,26 @@
     <footer class="aui-dialog2-footer">
         <!-- Actions to render on the right of the footer -->
         <div class="aui-dialog2-footer-actions">
-            <button id="add-page-tree-dialog-save-button" class="aui-button aui-button-primary">Save</button>
+            <button
+                    data-aui-trigger
+                    aria-controls="add-page-tree-dialog-really-save-dialog"
+                    href="#add-page-tree-dialog-really-save-dialog"
+                    id="add-page-tree-dialog-save-button"
+                    class="aui-button aui-button-primary"
+            >Save</button>
+
             <button id="add-page-tree-dialog-close-button" class="aui-button aui-button-link">Close</button>
         </div>
         <!-- Hint text is rendered on the left of the footer -->
         <div class="aui-dialog2-footer-hint">Click save to create page stubs. Cancel to discard.</div>
     </footer>
+
 </section>
+<aui-inline-dialog2 id="add-page-tree-dialog-really-save-dialog"
+                    class="aui-layer aui-inline-dialog"
+                    data-aui-alignment="bottom center"
+                    data-aui-responds-to="toggle"
+                    aria-hidden="true">
+    <div class="aui-inline-dialog-contents"><p>Lorem ipsum.</p></div>
+</aui-inline-dialog2>
 {/template}

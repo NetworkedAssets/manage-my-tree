@@ -4,6 +4,7 @@
     var can_create = true;
 
     function showDialog(payload) {
+        require(['aui/inline-dialog2']);
         var root_page = payload.pageTree;
         can_create = payload.canCreate;
 
@@ -167,12 +168,12 @@
             tree.jstree().destroy();
         });
 
-        $(dialog + "-save-button").click(function (e) {
-            e.preventDefault();
-            AJS.dialog2(dialog).hide();
-            tree.jstree().destroy();
-            ManagePagetreeCommand.send();
-        });
+        // $(dialog + "-save-button").click(function (e) {
+        //     e.preventDefault();
+        //     AJS.dialog2(dialog).hide();
+        //     tree.jstree().destroy();
+        //     ManagePagetreeCommand.send();
+        // });
         //endregion
     });
 })(jQuery_1_11);

@@ -14,6 +14,9 @@
     <!-- add our web resources -->
     <web-resource key="add-pagetree-resources" name="add-pagetree Web Resources">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>confluence.web.resources:aui-experimental</dependency>
+        <dependency>com.atlassian.auiplugin:aui-inline-dialog2</dependency>
+        <dependency>com.atlassian.auiplugin:aui-experimental-soy-templates</dependency>
 
         <resource type="download" name="jquery-1.11.3.min.js" location="/js/jquery-1.11.3.min.js"/>
 
@@ -32,9 +35,10 @@
     </web-resource>
 
     <web-resource key="soy-templates">
-        <dependency>
-            com.atlassian.soy.soy-template-plugin:soy-deps
-        </dependency>
+        <dependency>com.atlassian.soy.soy-template-plugin:soy-deps</dependency>
+        <dependency>confluence.web.resources:aui-experimental</dependency>
+        <dependency>com.atlassian.auiplugin:aui-inline-dialog2</dependency>
+        <dependency>com.atlassian.auiplugin:aui-experimental-soy-templates</dependency>
 
         <!-- Available to the server-side only -->
         <resource type="soy" name="addPageTreeDialog" location="/templates/addPageTreeDialog.soy"/>
@@ -50,6 +54,9 @@
     </web-resource>
 
     <web-panel key="pagetree_dialog" location="atl.general">
+        <dependency>confluence.web.resources:aui-experimental</dependency>
+        <dependency>com.atlassian.auiplugin:aui-inline-dialog2</dependency>
+        <dependency>com.atlassian.auiplugin:aui-experimental-soy-templates</dependency>
         <resource name="view" type="soy"
                   location="com.networkedassets.plugins.add-pagetree:soy-templates/Confluence.Templates.AddPagetree.addPageTreeDialog"/>
     </web-panel>
