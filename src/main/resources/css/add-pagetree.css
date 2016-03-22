@@ -1,3 +1,15 @@
 button.add-node-btn, button.rem-node-btn {
-	margin-left: 6px;
+    margin-left: 6px;
+}
+
+.aui.pagetree-buttons {
+    display: block;
+    visibility: visible;
+    background: white;
+    padding: 10px 20px 10px 20px;
+    margin: 0;
+}
+
+.pagetree-containter.aui-dialog2-content {
+    padding-top: 0;
 }

@@ -9,29 +9,30 @@
 <section role="dialog" id="add-page-tree-dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
     <!-- Dialog header -->
     <header class="aui-dialog2-header">
-            <!-- The dialog's title -->
-            <h2 class="aui-dialog2-header-main">Manage page tree</h2>
+        <!-- The dialog's title -->
+        <h2 class="aui-dialog2-header-main">Manage page tree</h2>
 
-            <div class="aui-dialog2-header-secondary">
-                <form class="aui" action="javascript:void(0)">
-                    <input id="manage-pagetree-search-page" class="text" type="search" name="search"
-                           placeholder="Search...">
-                </form>
-            </div>
-            <!-- Close icon -->
-            <a class="aui-dialog2-header-close">
-                <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
-            </a>
+        <div class="aui-dialog2-header-secondary">
+            <form class="aui" action="javascript:void(0)">
+                <input id="manage-pagetree-search-page" class="text" type="search" name="search"
+                       placeholder="Search...">
+            </form>
+        </div>
+        <!-- Close icon -->
+        <a class="aui-dialog2-header-close">
+            <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
+        </a>
     </header>
+    <form class="aui pagetree-buttons" action="javascript:void(0)">
+        <div class="aui-buttons">
+            <button id="manage-pagetree-create-page-button" class="aui-button aui-button-primary">Create</button>
+            <button id="manage-pagetree-rename-page-button" class="aui-button">Rename</button>
+            <button id="manage-pagetree-remove-page-button" class="aui-button">Remove</button>
+        </div>
+    </form>
     <!-- Main dialog content -->
-    <div class="aui-dialog2-content">
-        <form class="aui" action="javascript:void(0)">
-            <div class="aui-buttons" style="margin-bottom: 20px;">
-                <button id="manage-pagetree-create-page-button" class="aui-button aui-button-primary">Create</button>
-                <button id="manage-pagetree-rename-page-button" class="aui-button">Rename</button>
-                <button id="manage-pagetree-remove-page-button" class="aui-button">Remove</button>
-            </div>
-        </form>
+    <div class="pagetree-containter aui-dialog2-content">
+
         <div id="page-tree">
         </div>
     </div>
@@ -45,20 +46,26 @@
                     href="#add-page-tree-dialog-really-save-dialog"
                     id="add-page-tree-dialog-save-button"
                     class="aui-button aui-button-primary"
-            >Save</button>
+            >Save
+            </button>
 
-            <button id="add-page-tree-dialog-close-button" class="aui-button aui-button-link">Close</button>
+            <button id="add-page-tree-dialog-close-button" class="aui-button aui-button-link">Cancel</button>
         </div>
         <!-- Hint text is rendered on the left of the footer -->
         <div class="aui-dialog2-footer-hint">Click save to create page stubs. Cancel to discard.</div>
     </footer>
-
 </section>
 <aui-inline-dialog2 id="add-page-tree-dialog-really-save-dialog"
                     class="aui-layer aui-inline-dialog"
-                    data-aui-alignment="bottom center"
+                    data-aui-alignment=""
                     data-aui-responds-to="toggle"
                     aria-hidden="true">
-    <div class="aui-inline-dialog-contents"><p>Lorem ipsum.</p></div>
+    <div class="aui-inline-dialog-contents">
+        <h3>Are you sure?</h3>
+        <p>Do you really want to commit these changes:</p>
+        <ul id="pagetree-action-list"></ul>
+        <p>
+        <button id="add-page-tree-dialog-really-save-button" class="aui-button aui-button-secondary">Yes, commit the changes</button>
+    </div>
 </aui-inline-dialog2>
 {/template}

@@ -11,29 +11,33 @@ ManagePagetreeCommand = (function ($, undefined) {
                 parentId: parentId
             });
         },
-        removePage: function (pageId) {
+        removePage: function (pageId, pageName) {
             commands.push({
                 commandType: "removePage",
-                pageId: pageId
+                pageId: pageId,
+                name: pageName
             });
         },
-        movePage: function (pageId, newParentId, newPosition) {
+        movePage: function (pageId, newParentId, newPosition, nodeName, parentName) {
             commands.push({
                 commandType: "movePage",
                 pageId: pageId,
                 newParentId: newParentId,
-                newPosition: newPosition
+                newPosition: newPosition,
+                name: nodeName,
+                parentName: parentName
             });
         },
-        renamePage: function (pageId, newName) {
+        renamePage: function (pageId, newName, oldName) {
+            if (newName == oldName) return;
             commands.push({
                 commandType: "renamePage",
                 pageId: pageId,
-                newName: newName
+                newName: newName,
+                oldName: oldName
             });
         },
         send: function () {
-            eval("debugger");
             $.ajax({
                 type: "POST",
                 url: Confluence.getBaseUrl() + "/rest/pagetree/1.0/manage?space=" + AJS.params.spaceKey,
@@ -58,6 +62,12 @@ ManagePagetreeCommand = (function ($, undefined) {
                         location.reload();
                 }
             });
+        },
+        getCommands: function () {
+            return commands;
+        },
+        clearCommands: function () {
+            commands = [];
         }
     }
 })(jQuery_1_11);

@@ -66,11 +66,11 @@
         var jstree = tree.jstree(true);
 
         var page = jstree.get_node(page_id);
+        var oldName = page.text;
         if (!page.a_attr.data_canEdit) return false;
 
         jstree.edit(page, null, function (page) {
-            jstree.get_node(page_id);
-            ManagePagetreeCommand.renamePage(page_id, page.text);
+            ManagePagetreeCommand.renamePage(page_id, page.text, oldName);
         })
     }
 
@@ -79,9 +79,10 @@
 
         var page = jstree.get_node(page_id);
         if (!page.a_attr.data_canRemove) return false;
+        var pageName = page.text;
 
         jstree.delete_node(page_id);
-        ManagePagetreeCommand.removePage(page_id);
+        ManagePagetreeCommand.removePage(page_id, pageName);
     }
 
     AJS.toInit(function () {
@@ -122,22 +123,26 @@
             remove_page(selected[0]);
         });
 
-        tree.on('move_node.jstree', function (e, data) {
-            ManagePagetreeCommand.movePage(data.node.id, data.parent, data.position)
-        });
-
-        tree.on("changed.jstree", function () {
-            var jstree = tree.jstree(true);
-            var selected = jstree.get_selected();
-
-            $("#manage-pagetree-rename-page-button")[0].disabled = !selected.every(function (e) {
-                return jstree.get_node(e).a_attr.data_canEdit;
+        var set_jstree_event_listeners = function () {
+            tree.on('move_node.jstree', function (e, data) {
+                var parentName = tree.jstree(true).get_node(data.parent).text;
+                ManagePagetreeCommand.movePage(data.node.id, data.parent, data.position, data.node.text, parentName);
             });
 
-            $("#manage-pagetree-remove-page-button")[0].disabled = !selected.every(function (e) {
-                return jstree.get_node(e).a_attr.data_canRemove;
+            tree.on("changed.jstree", function () {
+                var jstree = tree.jstree(true);
+                var selected = jstree.get_selected();
+
+                $("#manage-pagetree-rename-page-button")[0].disabled = !selected.every(function (e) {
+                    return jstree.get_node(e).a_attr.data_canEdit;
+                });
+
+                $("#manage-pagetree-remove-page-button")[0].disabled = !selected.every(function (e) {
+                    return jstree.get_node(e).a_attr.data_canRemove;
+                });
             });
-        });
+        };
+        set_jstree_event_listeners();
 
         //region link controls
         AJS.$("#add-pagetree-link-id").click(function (e) {
@@ -159,21 +164,39 @@
         $(dialog + "-close-button").click(function (e) {
             e.preventDefault();
             AJS.dialog2(dialog).hide();
-            tree.jstree().destroy();
         });
 
-        $(dialog + " .aui-dialog2-header-close").click(function (e) {
+        AJS.dialog2(dialog).on("hide", function () {
+            tree.jstree(true).destroy();
+            ManagePagetreeCommand.clearCommands();
+            set_jstree_event_listeners();
+        });
+
+        $(dialog + "-save-button").click(function (e) {
+            var actionsContainer = $("#pagetree-action-list");
+            var actions = ManagePagetreeCommand.getCommands().map(function(e) {
+                switch (e.commandType) {
+                    case "addPage":
+                        return '<span class="aui-lozenge aui-lozenge-success">Add</span> "' + e.name + '"';
+                    case "removePage":
+                        return '<span class="aui-lozenge aui-lozenge-error">Remove</span> "' + e.name + '"';
+                    case "movePage":
+                        return '<span class="aui-lozenge aui-lozenge-current">Move</span> "' + e.name + '"';
+                    case "renamePage":
+                        return '<span class="aui-lozenge aui-lozenge-complete">Rename</span> "' + e.oldName +
+                            '" -> "' + e.newName + '"';
+                }
+            }).join("</li><li>");
+
+            if (actions != "") actions = "<li>" + actions + "</li>";
+            actionsContainer.html(actions);
+        });
+
+        $(dialog + "-really-save-button").click(function (e) {
             e.preventDefault();
+            ManagePagetreeCommand.send();
             AJS.dialog2(dialog).hide();
-            tree.jstree().destroy();
         });
-
-        // $(dialog + "-save-button").click(function (e) {
-        //     e.preventDefault();
-        //     AJS.dialog2(dialog).hide();
-        //     tree.jstree().destroy();
-        //     ManagePagetreeCommand.send();
-        // });
         //endregion
     });
 })(jQuery_1_11);
