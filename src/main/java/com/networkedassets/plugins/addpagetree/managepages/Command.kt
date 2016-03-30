@@ -23,8 +23,11 @@ import java.util.*
 //  ":" means "implements"/"extends" from Java
 //  "by m" generates implementations for all the methods in the interface/class that delegate to m
 class ExecutionContext
-@JvmOverloads constructor(val permissionManager: PermissionManager, val space: Space, val m: MutableMap<String, Long> = HashMap())
-: MutableMap<String, Long> by m {
+@JvmOverloads constructor(
+        val permissionManager: PermissionManager,
+        val space: Space,
+        val idMapping: MutableMap<String, Long> = HashMap())
+: MutableMap<String, Long> by idMapping {
     val user: ConfluenceUser
         get() = AuthenticatedUserThreadLocal.get()
 
@@ -36,6 +39,7 @@ class ExecutionContext
 @JsonDeserialize(using = ManagePagesCommandDeserializer::class)
 sealed class Command : (PageManager, ExecutionContext) -> Unit {
     abstract fun execute(pageManager: PageManager, ec: ExecutionContext)
+    abstract fun revert(pageManager: PageManager, ec: ExecutionContext)
     override fun invoke(pageManager: PageManager, ec: ExecutionContext) = execute(pageManager, ec)
 
     @JsonSerialize(using = AddPageSerializer::class)
@@ -55,6 +59,11 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             pageManager.saveContentEntity(page, null)
 
             ec[newPageJstreeId] = page.id
+        }
+
+        override fun revert(pageManager: PageManager, ec: ExecutionContext) {
+            val page = pageManager.getPage(newPageJstreeId, ec)
+            pageManager.trashPage(page)
         }
 
         //region equals, hashCode, toString
@@ -97,7 +106,11 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
 
             val children = ArrayList(page.children)
             children.forEach { removePage(it, pageManager, ec) }
-            pageManager.trashPage(page)
+            pageManager.trashPage(page) // TODO: save info about all the trashed pages and their locations
+        }
+
+        override fun revert(pageManager: PageManager, ec: ExecutionContext) {
+            throw UnsupportedOperationException() // TODO: restore all the trashed pages to their correct locations
         }
 
         //region equals, hashCode, toString
@@ -161,6 +174,10 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             }
         }
 
+        override fun revert(pageManager: PageManager, ec: ExecutionContext) {
+            throw UnsupportedOperationException() // TODO: move page to old parent and old position
+        }
+
         //region equals, hashCode, toString
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -194,10 +211,14 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             val page = pageManager.getPage(pageId, ec)
 
             if (!ec.canEdit(page))
-                throw PermissionException("""Cannot rename page "${page.title}": insufficient permisions!""")
+                throw PermissionException("""Cannot rename page "${page.title}": insufficient permissions!""")
 
             if (page.title != newName)
                 pageManager.renamePage(page, newName)
+        }
+
+        override fun revert(pageManager: PageManager, ec: ExecutionContext) {
+            throw UnsupportedOperationException() // TODO: rename back to the old name
         }
 
         //region equals, hashCode, toString
