@@ -23,19 +23,17 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Path("/")
 public class PageTreeService {
     private static final String LAST_COMMANDS = "com.networkedassets.plugins.add-pagetree.LAST_COMMANDS";
-    private static final String LAST_ID_MAPPING = "com.networkedassets.plugins.add-pagetree.LAST_ID_MAPPING";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     @SuppressWarnings("unused")
     private static Logger log = LoggerFactory.getLogger(PageTreeService.class);
     private PageManager pageManager;
     private PermissionManager permissionManager;
     private SpaceManager spaceManager;
     private PluginSettingsFactory pluginSettingsFactory;
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public PageTreeService(PageManager pageManager, PermissionManager permissionManager, SpaceManager spaceManager,
                            PluginSettingsFactory pluginSettingsFactory) {
@@ -43,6 +41,18 @@ public class PageTreeService {
         this.permissionManager = permissionManager;
         this.spaceManager = spaceManager;
         this.pluginSettingsFactory = pluginSettingsFactory;
+    }
+
+    private static Response error(String message) {
+        return Response.status(500).entity(new JsonMessage(500, message)).build();
+    }
+
+    private static Response error(Exception exception) {
+        return error(exception.getLocalizedMessage());
+    }
+
+    private static Response success(String message) {
+        return Response.ok(new JsonMessage(200, message)).build();
     }
 
     @POST
@@ -73,7 +83,7 @@ public class PageTreeService {
             try {
                 command.execute(pageManager, ec);
             } catch (final Exception e) {
-                revertCommands(ec, executedCommands);
+                revertCommands(executedCommands, s);
                 return error(e);
             }
             executedCommands.add(command);
@@ -90,8 +100,7 @@ public class PageTreeService {
         try {
             Space s = spaceManager.getSpace(spaceKey);
             List<Command> lastCommandList = getLastCommandList(s);
-            ExecutionContext lastExecutionContext = getLastExecutionContext(s);
-            revertCommands(lastExecutionContext, lastCommandList);
+            revertCommands(lastCommandList, s);
         } catch (IOException e) {
             return error(e);
         }
@@ -102,29 +111,24 @@ public class PageTreeService {
         PluginSettings pluginSettings = pluginSettingsFactory.createSettingsForKey(ec.getSpace().getKey());
         String serializedCommands = OBJECT_MAPPER.writeValueAsString(executedCommands);
         pluginSettings.put(LAST_COMMANDS, serializedCommands);
-        String serializedIdMapping = OBJECT_MAPPER.writeValueAsString(ec.getIdMapping());
-        pluginSettings.put(LAST_ID_MAPPING, serializedIdMapping);
     }
 
     private List<Command> getLastCommandList(Space space) throws IOException {
         PluginSettings pluginSettings = pluginSettingsFactory.createSettingsForKey(space.getKey());
         String serializedCommands = (String) pluginSettings.get(LAST_COMMANDS);
-        return OBJECT_MAPPER.readValue(serializedCommands,
-                TypeFactory.defaultInstance().constructCollectionType(List.class, Command.class));
-    }
-
-    private ExecutionContext getLastExecutionContext(Space space) throws IOException {
-        PluginSettings pluginSettings = pluginSettingsFactory.createSettingsForKey(space.getKey());
-        String serializedIdMapping = (String) pluginSettings.get(LAST_ID_MAPPING);
-        Map<String, Long> idMapping = OBJECT_MAPPER.readValue(serializedIdMapping,
-                TypeFactory.defaultInstance().constructMapType(Map.class, String.class, Long.class));
-        return new ExecutionContext(permissionManager, space, idMapping);
-    }
-
-    private void revertCommands(ExecutionContext ec, List<Command> executedCommands) {
-        for (Command executedCommand : Lists.reverse(executedCommands)) {
-            executedCommand.revert(pageManager, ec);
+        try {
+            return OBJECT_MAPPER.readValue(serializedCommands,
+                    TypeFactory.defaultInstance().constructCollectionType(List.class, Command.class));
+        } catch (IOException e) {
+            return new ArrayList<>();
         }
+    }
+
+    private void revertCommands(List<Command> executedCommands, Space s) throws IOException {
+        for (Command executedCommand : Lists.reverse(executedCommands)) {
+            executedCommand.revert(pageManager);
+        }
+        persistLastChanges(new ArrayList<>(), new ExecutionContext(permissionManager, s));
     }
 
     @GET
@@ -144,17 +148,6 @@ public class PageTreeService {
         return Response.ok(pageTreeInfo).build();
     }
 
-    @SuppressWarnings("WeakerAccess") // has to be public for jackson to be happy
-    public static class PageTreeInfo {
-        public boolean canCreate;
-        public JsonPage pageTree;
-
-        public PageTreeInfo(boolean canCreate, JsonPage pageTree) {
-            this.canCreate = canCreate;
-            this.pageTree = pageTree;
-        }
-    }
-
     private Page pageFromSpaceOrHomepage(Long pageId, Space space) {
         Page page;
         if (pageId == null || (page = pageManager.getPage(pageId)) == null || page.getSpace() != space)
@@ -167,16 +160,15 @@ public class PageTreeService {
                 .hasPermission(AuthenticatedUserThreadLocal.get(), Permission.VIEW, space);
     }
 
-    private static Response error(String message) {
-        return Response.status(500).entity(new JsonMessage(500, message)).build();
-    }
+    @SuppressWarnings("WeakerAccess") // has to be public for jackson to be happy
+    public static class PageTreeInfo {
+        public boolean canCreate;
+        public JsonPage pageTree;
 
-    private static Response error(Exception exception) {
-        return error(exception.getLocalizedMessage());
-    }
-
-    private static Response success(String message) {
-        return Response.ok(new JsonMessage(200, message)).build();
+        public PageTreeInfo(boolean canCreate, JsonPage pageTree) {
+            this.canCreate = canCreate;
+            this.pageTree = pageTree;
+        }
     }
 
     @SuppressWarnings("WeakerAccess") // has to be public for jackson to be happy

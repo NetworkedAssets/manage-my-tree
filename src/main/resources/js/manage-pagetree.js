@@ -172,6 +172,22 @@
             set_jstree_event_listeners();
         });
 
+        $("#manage-pagetree-undo-button").click(function (e) {
+            e.preventDefault();
+            $.ajax({
+                type: "POST",
+                url: Confluence.getBaseUrl() + "/rest/pagetree/1.0/revertLast?space=" + AJS.params.spaceKey,
+                dataType: "json",
+                error: function() {
+                    eval("debugger;");
+                },
+                success: function() {
+                    eval("debugger;");
+                    location.reload()
+                }
+            });
+        });
+
         $(dialog + "-save-button").click(function (e) {
             var actionsContainer = $("#pagetree-action-list");
             var actions = ManagePagetreeCommand.getCommands().map(function(e) {

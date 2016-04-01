@@ -94,7 +94,7 @@
     </build>
 
     <properties>
-        <kotlin.version>1.0.0</kotlin.version>
+        <kotlin.version>1.0.1-2</kotlin.version>
         <confluence.version>5.8.6</confluence.version>
         <confluence.data.version>5.8.6</confluence.data.version>
         <amps.version>5.0.13</amps.version>
