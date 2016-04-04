@@ -176,10 +176,19 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             if (!ec.canEdit(page))
                 throw PermissionException("""Cannot move page "${page.title}": insufficient permissions!""")
 
-            movedPage = OriginalPage(page.id, Location(page.position, page.parent.id))
+            movedPage = OriginalPage(page.id, Location(getTruePosition(page), page.parent.id))
 
             moveAsChildIfNecessary(page, newParentId, pageManager, ec)
             pageManager.setPagePosition(page, newPosition)
+        }
+
+        private fun getTruePosition(page: Page): Int {
+            var i = 0;
+            for (child in page.parent.sortedChildren) {
+                if (child == page) return i
+                i++
+            }
+            throw IllegalArgumentException("Page is not in its parent's children list")
         }
 
         private fun moveAsChildIfNecessary(page: Page, newParentId: String?, pageManager: PageManager, ec: ExecutionContext) {
