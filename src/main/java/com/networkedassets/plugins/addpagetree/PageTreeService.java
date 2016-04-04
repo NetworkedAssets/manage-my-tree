@@ -13,7 +13,6 @@ import com.google.common.collect.Lists;
 import com.networkedassets.plugins.addpagetree.managepages.Command;
 import com.networkedassets.plugins.addpagetree.managepages.ExecutionContext;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.type.TypeFactory;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,7 +98,11 @@ public class PageTreeService {
     public Response revertLastChange(@QueryParam("space") String spaceKey) {
         try {
             Space s = spaceManager.getSpace(spaceKey);
-            List<Command> lastCommandList = getLastCommandList(s);
+            LastChanges lastChanges = getLastChanges(s);
+            if (lastChanges == null) return error("No last changes");
+            if (!AuthenticatedUserThreadLocal.get().getKey().getStringValue().equals(lastChanges.userKey))
+                return error("Unauthorized");
+            List<Command> lastCommandList = lastChanges.executedCommands;
             revertCommands(lastCommandList, s);
         } catch (IOException e) {
             return error(e);
@@ -109,18 +112,21 @@ public class PageTreeService {
 
     private void persistLastChanges(List<Command> executedCommands, ExecutionContext ec) throws IOException {
         PluginSettings pluginSettings = pluginSettingsFactory.createSettingsForKey(ec.getSpace().getKey());
-        String serializedCommands = OBJECT_MAPPER.writeValueAsString(executedCommands);
+        LastChanges lc = new LastChanges();
+        lc.executedCommands = executedCommands;
+        lc.userKey = AuthenticatedUserThreadLocal.get().getKey().getStringValue();
+        String serializedCommands = OBJECT_MAPPER.writeValueAsString(lc);
         pluginSettings.put(LAST_COMMANDS, serializedCommands);
     }
 
-    private List<Command> getLastCommandList(Space space) throws IOException {
+    @Nullable
+    private LastChanges getLastChanges(Space space) throws IOException {
         PluginSettings pluginSettings = pluginSettingsFactory.createSettingsForKey(space.getKey());
         String serializedCommands = (String) pluginSettings.get(LAST_COMMANDS);
         try {
-            return OBJECT_MAPPER.readValue(serializedCommands,
-                    TypeFactory.defaultInstance().constructCollectionType(List.class, Command.class));
+            return OBJECT_MAPPER.readValue(serializedCommands, LastChanges.class);
         } catch (IOException e) {
-            return new ArrayList<>();
+            return null;
         }
     }
 
@@ -158,6 +164,12 @@ public class PageTreeService {
     private boolean isUnauthorized(Space space) {
         return permissionManager == null || !permissionManager
                 .hasPermission(AuthenticatedUserThreadLocal.get(), Permission.VIEW, space);
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    static class LastChanges {
+        public List<Command> executedCommands;
+        public String userKey;
     }
 
     @SuppressWarnings("WeakerAccess") // has to be public for jackson to be happy
