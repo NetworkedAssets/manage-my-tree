@@ -147,11 +147,30 @@ public class PageTreeService {
         Page page = pageFromSpaceOrHomepage(rootId, space);
 
         final boolean canCreate = permissionManager.hasCreatePermission(AuthenticatedUserThreadLocal.get(), space, Page.class);
-        PageTreeInfo pageTreeInfo = new PageTreeInfo(canCreate, JsonPage.from(page,
-                AuthenticatedUserThreadLocal.get(),
-                permissionManager));
 
-        return Response.ok(pageTreeInfo).build();
+        final LastChanges lastChanges;
+        List<Command> lastCommands = new ArrayList<>();
+        try {
+            lastChanges = getLastChanges(space);
+            if (lastChanges != null && AuthenticatedUserThreadLocal.get().getKey().getStringValue().equals(lastChanges.userKey))
+                lastCommands = lastChanges.executedCommands;
+        } catch (IOException e) {
+            log.error("Exception: ", e);
+        }
+        PageTreeInfo pageTreeInfo = new PageTreeInfo(
+                canCreate,
+                JsonPage.from(
+                        page,
+                        AuthenticatedUserThreadLocal.get(),
+                        permissionManager),
+                lastCommands
+        );
+
+        try {
+            return Response.ok(OBJECT_MAPPER.writeValueAsString(pageTreeInfo)).build();
+        } catch (IOException e) {
+            return error(e);
+        }
     }
 
     private Page pageFromSpaceOrHomepage(Long pageId, Space space) {
@@ -176,10 +195,12 @@ public class PageTreeService {
     public static class PageTreeInfo {
         public boolean canCreate;
         public JsonPage pageTree;
+        public List<Command> lastChanges;
 
-        public PageTreeInfo(boolean canCreate, JsonPage pageTree) {
+        public PageTreeInfo(boolean canCreate, JsonPage pageTree, List<Command> lastChanges) {
             this.canCreate = canCreate;
             this.pageTree = pageTree;
+            this.lastChanges = lastChanges;
         }
     }
 

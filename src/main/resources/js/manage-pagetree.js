@@ -2,11 +2,18 @@
     var dialog = "#add-page-tree-dialog";
     var tree = null;
     var can_create = true;
+    var undoActions = null;
 
     function showDialog(payload) {
         require(['aui/inline-dialog2']);
         var root_page = payload.pageTree;
         can_create = payload.canCreate;
+        undoActions = payload.lastChanges;
+        eval("debugger;");
+
+        if (!undoActions || (undoActions && undoActions.length == 0)) {
+            document.getElementById("manage-pagetree-undo-button").disabled = true;
+        }
 
         tree.jstree({
             "core": {
@@ -172,20 +179,46 @@
             set_jstree_event_listeners();
         });
 
-        $("#manage-pagetree-undo-button").click(function (e) {
+        $("#add-page-tree-dialog-really-undo-button").click(function (e) {
             e.preventDefault();
             $.ajax({
                 type: "POST",
                 url: Confluence.getBaseUrl() + "/rest/pagetree/1.0/revertLast?space=" + AJS.params.spaceKey,
                 dataType: "json",
-                error: function() {
-                    eval("debugger;");
+                error: function (data) {
+                    data = JSON.parse(data.responseText);
+                    console.log(JSON.stringify(data));
+                    commands = [];
+                    if (data.status == 500)
+                        alert(data.message);
+                    else
+                        location.reload();
                 },
                 success: function() {
                     eval("debugger;");
                     location.reload()
                 }
             });
+        });
+
+        $("#manage-pagetree-undo-button").click(function (e) {
+            var actionsContainer = $("#pagetree-undo-action-list");
+            var actions = undoActions.map(function(e) {
+                switch (e.commandType) {
+                    case "addPage":
+                        return '<span class="aui-lozenge aui-lozenge-success">Add</span> "' + e.name + '"';
+                    case "removePage":
+                        return '<span class="aui-lozenge aui-lozenge-error">Remove</span> "' + e.name + '"';
+                    case "movePage":
+                        return '<span class="aui-lozenge aui-lozenge-current">Move</span> "' + e.name + '"';
+                    case "renamePage":
+                        return '<span class="aui-lozenge aui-lozenge-complete">Rename</span> "' + e.oldName +
+                            '" -> "' + e.newName + '"';
+                }
+            }).join("</li><li>");
+
+            if (actions != "") actions = "<li>" + actions + "</li>";
+            actionsContainer.html(actions);
         });
 
         $(dialog + "-save-button").click(function (e) {
