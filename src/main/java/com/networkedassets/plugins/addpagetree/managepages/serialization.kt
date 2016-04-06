@@ -65,6 +65,9 @@ class ManagePagesCommandDeserializer : JsonDeserializer<Command>() {
                 else arrayListOf<OriginalPage>()
         cmd.removedPages += removedPages
 
+        val nameNode: JsonNode? = jtree["name"]
+        cmd.name = if (nameNode != null && nameNode.isTextual) nameNode.textValue else null
+
         return cmd
     }
 
@@ -91,6 +94,8 @@ class ManagePagesCommandDeserializer : JsonDeserializer<Command>() {
         val movCmd = Command.MovePage(pageId, newParentId, newPosition)
         movCmd.movedPage = movedPage
 
+        movCmd.name = jtree["name"].let { if (it != null && it.isTextual) it.textValue else null }
+
         return movCmd
     }
 
@@ -107,12 +112,12 @@ class ManagePagesCommandDeserializer : JsonDeserializer<Command>() {
         renamedPageIdNode = if (renamedPageIdNode?.isIntegralNumber ?: false) renamedPageIdNode else null
         val renamedPageId = renamedPageIdNode?.longValue
 
-        var originalPageNameNode: JsonNode? = jtree["originalPageName"]
-        originalPageNameNode = if (originalPageNameNode?.isTextual ?: false) originalPageNameNode else null
-        var originalPageName = originalPageNameNode?.textValue
+        var oldNameNode: JsonNode? = jtree["oldName"]
+        oldNameNode = if (oldNameNode?.isTextual ?: false) oldNameNode else null
+        var oldName = oldNameNode?.textValue
 
         val renCmd = Command.RenamePage(pageId, newName)
-        renCmd.originalPageName = originalPageName
+        renCmd.oldName = oldName
         renCmd.renamedPageId = renamedPageId
 
         return renCmd
@@ -144,6 +149,7 @@ class RemovePageSerializer : JsonSerializer<Command.RemovePage>() {
         remCmd.put("commandType", "removePage")
         remCmd.put("pageId", command.pageId)
         remCmd.put("removedPages", JsonNodeFactory.instance.POJONode(command.removedPages))
+        remCmd.put("name", command.name)
         jgen.writeTree(remCmd)
     }
 }
@@ -159,6 +165,7 @@ class MovePageSerializer : JsonSerializer<Command.MovePage>() {
         movCmd.put("newParentId", command.newParentId)
         movCmd.put("newPosition", command.newPosition)
         movCmd.put("movedPage", JsonNodeFactory.instance.POJONode(command.movedPage))
+        movCmd.put("name", command.name)
         jgen.writeTree(movCmd)
     }
 }
@@ -173,7 +180,7 @@ class RenamePageSerializer : JsonSerializer<Command.RenamePage>() {
         renCmd.put("pageId", command.pageId)
         renCmd.put("newName", command.newName)
         renCmd.put("renamedPageId", command.renamedPageId)
-        renCmd.put("originalPageName", command.originalPageName)
+        renCmd.put("oldName", command.oldName)
         jgen.writeTree(renCmd)
     }
 }

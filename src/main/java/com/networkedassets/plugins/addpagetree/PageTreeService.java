@@ -125,7 +125,7 @@ public class PageTreeService {
         String serializedCommands = (String) pluginSettings.get(LAST_COMMANDS);
         try {
             return OBJECT_MAPPER.readValue(serializedCommands, LastChanges.class);
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
             return null;
         }
     }

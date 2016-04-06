@@ -113,9 +113,11 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
     @JsonSerialize(using = RemovePageSerializer::class)
     class RemovePage(val pageId: String) : Command() {
         val removedPages: MutableList<OriginalPage> = mutableListOf()
+        var name: String? = null
 
         override fun execute(pageManager: PageManager, ec: ExecutionContext) {
             val page = pageManager.getPage(pageId, ec)
+            name = page.title
             removePage(page, pageManager, ec)
         }
 
@@ -142,13 +144,8 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
         }
 
         //region equals, hashCode, toString
-        override fun hashCode(): Int {
-            var result = pageId.hashCode()
-            result += 31 * result + removedPages.hashCode()
-            return result
-        }
 
-        override fun equals(other: Any?): Boolean {
+        override fun equals(other: Any?): Boolean{
             if (this === other) return true
             if (other?.javaClass != javaClass) return false
 
@@ -156,19 +153,29 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
 
             if (pageId != other.pageId) return false
             if (removedPages != other.removedPages) return false
+            if (name != other.name) return false
 
             return true
         }
 
-        override fun toString(): String {
-            return "RemovePage(pageId='$pageId', removedPages=$removedPages)"
+        override fun hashCode(): Int{
+            var result = pageId.hashCode()
+            result += 31 * result + removedPages.hashCode()
+            result += 31 * result + (name?.hashCode() ?: 0)
+            return result
         }
+
+        override fun toString(): String{
+            return "RemovePage(pageId='$pageId', removedPages=$removedPages, name=$name)"
+        }
+
         //endregion
     }
 
     @JsonSerialize(using = MovePageSerializer::class)
     class MovePage(val pageId: String, val newParentId: String?, val newPosition: Int?) : Command() {
-        var movedPage: OriginalPage? = null;
+        var movedPage: OriginalPage? = null
+        var name: String? = null
 
         override fun execute(pageManager: PageManager, ec: ExecutionContext) {
             val page = pageManager.getPage(pageId, ec)
@@ -177,6 +184,7 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
                 throw PermissionException("""Cannot move page "${page.title}": insufficient permissions!""")
 
             movedPage = OriginalPage(page.id, Location(getTruePosition(page), page.parent.id))
+            name = page.title
 
             moveAsChildIfNecessary(page, newParentId, pageManager, ec)
             pageManager.setPagePosition(page, newPosition)
@@ -217,7 +225,8 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
         }
 
         //region equals, hashCode, toString
-        override fun equals(other: Any?): Boolean {
+
+        override fun equals(other: Any?): Boolean{
             if (this === other) return true
             if (other?.javaClass != javaClass) return false
 
@@ -227,28 +236,31 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             if (newParentId != other.newParentId) return false
             if (newPosition != other.newPosition) return false
             if (movedPage != other.movedPage) return false
+            if (name != other.name) return false
 
             return true
         }
 
-        override fun hashCode(): Int {
+        override fun hashCode(): Int{
             var result = pageId.hashCode()
             result += 31 * result + (newParentId?.hashCode() ?: 0)
             result += 31 * result + (newPosition ?: 0)
             result += 31 * result + (movedPage?.hashCode() ?: 0)
+            result += 31 * result + (name?.hashCode() ?: 0)
             return result
         }
 
-        override fun toString(): String {
-            return "MovePage(pageId='$pageId', newParentId=$newParentId, newPosition=$newPosition, movedPage=$movedPage)"
+        override fun toString(): String{
+            return "MovePage(pageId='$pageId', newParentId=$newParentId, newPosition=$newPosition, movedPage=$movedPage, name=$name)"
         }
+
         //endregion
     }
 
     @JsonSerialize(using = RenamePageSerializer::class)
     class RenamePage(val pageId: String, val newName: String) : Command() {
         var renamedPageId: Long? = null
-        var originalPageName: String? = null
+        var oldName: String? = null
         override fun execute(pageManager: PageManager, ec: ExecutionContext) {
             val page = pageManager.getPage(pageId, ec)
 
@@ -256,18 +268,18 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
                 throw PermissionException("""Cannot rename page "${page.title}": insufficient permissions!""")
 
             renamedPageId = page.id
-            originalPageName = page.title
+            oldName = page.title
 
             if (page.title != newName)
                 pageManager.renamePage(page, newName)
         }
 
         override fun revert(pageManager: PageManager) {
-            if (renamedPageId == null || originalPageName == null)
+            if (renamedPageId == null || oldName == null)
                 throw IllegalStateException("Cannot revert changes before applying them")
             val page = pageManager.getPage(renamedPageId!!) ?:
                     throw IllegalStateException("No page with id=$pageId found")
-            pageManager.renamePage(page, originalPageName)
+            pageManager.renamePage(page, oldName)
         }
 
         //region equals, hashCode, toString
@@ -280,7 +292,7 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             if (pageId != other.pageId) return false
             if (newName != other.newName) return false
             if (renamedPageId != other.renamedPageId) return false
-            if (originalPageName != other.originalPageName) return false
+            if (oldName != other.oldName) return false
 
             return true
         }
@@ -289,12 +301,12 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             var result = pageId.hashCode()
             result += 31 * result + newName.hashCode()
             result += 31 * result + (renamedPageId?.hashCode() ?: 0)
-            result += 31 * result + (originalPageName?.hashCode() ?: 0)
+            result += 31 * result + (oldName?.hashCode() ?: 0)
             return result
         }
 
         override fun toString(): String {
-            return "RenamePage(pageId='$pageId', newName='$newName', renamedPageId=$renamedPageId, originalPageName=$originalPageName)"
+            return "RenamePage(pageId='$pageId', newName='$newName', renamedPageId=$renamedPageId, originalPageName=$oldName)"
         }
         //endregion
     }

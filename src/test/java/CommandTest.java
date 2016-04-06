@@ -20,18 +20,20 @@ public class CommandTest {
 
         final Command.RemovePage rp = new Command.RemovePage("0");
         rp.getRemovedPages().add(new OriginalPage(0, new Location(1, 2)));
+        rp.setName("foo");
         final String rps = om.writeValueAsString(rp);
         final Command rpd = om.readValue(rps, Command.class);
         Assert.assertEquals(rp, rpd);
 
         final Command.MovePage mp = new Command.MovePage("1", null, 0);
         mp.setMovedPage(new OriginalPage(1, new Location(2, 3)));
+        mp.setName("foo");
         final String mps = om.writeValueAsString(mp);
         final Command mpd = om.readValue(mps, Command.class);
         Assert.assertEquals(mp, mpd);
 
         final Command.RenamePage rnp = new Command.RenamePage("42", "czterdzieści dwa");
-        rnp.setOriginalPageName("lel");
+        rnp.setOldName("lel");
         rnp.setRenamedPageId(42L);
         final String rnps = om.writeValueAsString(rnp);
         final Command rnpd = om.readValue(rnps, Command.class);
