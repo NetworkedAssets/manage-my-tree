@@ -185,6 +185,8 @@
                 type: "POST",
                 url: Confluence.getBaseUrl() + "/rest/pagetree/1.0/revertLast?space=" + AJS.params.spaceKey,
                 dataType: "json",
+                contentType: "application/json",
+                headers: {"X-Atlassian-Token": "nocheck"},
                 error: function (data) {
                     data = JSON.parse(data.responseText);
                     console.log(JSON.stringify(data));
