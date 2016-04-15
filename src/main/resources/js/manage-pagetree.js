@@ -127,7 +127,9 @@
         $("#manage-pagetree-remove-page-button").click(function () {
             var selected = tree.jstree(true).get_selected();
             if (!selected.length) return false;
-            remove_page(selected[0]);
+            for (var i = 0; i < selected.length; ++i) {
+                remove_page(selected[i]);
+            }
         });
 
         var set_jstree_event_listeners = function () {
