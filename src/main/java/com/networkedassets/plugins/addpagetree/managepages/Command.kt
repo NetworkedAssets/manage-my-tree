@@ -1,6 +1,7 @@
 package com.networkedassets.plugins.addpagetree.managepages
 
 import com.atlassian.confluence.api.service.exceptions.PermissionException
+import com.atlassian.confluence.pages.AbstractPage
 import com.atlassian.confluence.pages.Page
 import com.atlassian.confluence.pages.PageManager
 import com.atlassian.confluence.security.Permission
@@ -30,9 +31,9 @@ class ExecutionContext
     val user: ConfluenceUser
         get() = AuthenticatedUserThreadLocal.get()
 
-    fun canCreate(p: Page) = permissionManager.hasCreatePermission(user, space, p)
-    fun canRemove(p: Page) = permissionManager.hasPermission(user, Permission.REMOVE, p)
-    fun canEdit(p: Page) = permissionManager.hasPermission(user, Permission.EDIT, p)
+    fun canCreate(p: AbstractPage) = permissionManager.hasCreatePermission(user, space, p)
+    fun canRemove(p: AbstractPage) = permissionManager.hasPermission(user, Permission.REMOVE, p)
+    fun canEdit(p: AbstractPage) = permissionManager.hasPermission(user, Permission.EDIT, p)
 }
 
 data class Location
@@ -44,7 +45,6 @@ data class OriginalPage
 @JsonCreator constructor(
         @param:JsonProperty("pageId") val pageId: Long,
         @param:JsonProperty("originalLocation") val originalLocation: Location)
-
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "commandType")
 @JsonSubTypes(
@@ -130,19 +130,22 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
         var name: String? = null
 
         override fun execute(pageManager: PageManager, ec: ExecutionContext) {
-            val page = pageManager.getPage(pageId, ec)
+            val page = pageManager.getAbstractPage(pageId, ec)
             name = page.title
             removePage(page, pageManager, ec)
         }
 
-        private fun removePage(page: Page, pageManager: PageManager, ec: ExecutionContext) {
+        private fun removePage(page: AbstractPage, pageManager: PageManager, ec: ExecutionContext) {
             if (!ec.canRemove(page))
                 throw PermissionException("""Cannot remove page "${page.title}": insufficient permissions!""")
 
-            val children = ArrayList(page.sortedChildren).asReversed()
-            children.forEach { removePage(it, pageManager, ec) }
+            if (page is Page) {
+                val children = ArrayList(page.sortedChildren).asReversed()
+                children.forEach { removePage(it, pageManager, ec) }
 
-            removedPages += OriginalPage(page.id, Location(page.position, page.parent.id))
+                removedPages += OriginalPage(page.id, Location(page.position, page.parent.id))
+            }
+
             pageManager.trashPage(page)
         }
 
@@ -294,7 +297,7 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
         var renamedPageId: Long? = null
         var oldName: String? = null
         override fun execute(pageManager: PageManager, ec: ExecutionContext) {
-            val page = pageManager.getPage(pageId, ec)
+            val page = pageManager.getAbstractPage(pageId, ec)
 
             if (!ec.canEdit(page))
                 throw PermissionException("""Cannot rename page "${page.title}": insufficient permissions!""")
@@ -351,6 +354,12 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             ) = RenamePage(pageId, newName).apply { this.renamedPageId = renamedPageId; this.oldName = oldName }
         }
     }
+}
+
+fun PageManager.getAbstractPage(s: String, ec: ExecutionContext): AbstractPage {
+    val e = IllegalArgumentException("No page with id=$s found")
+    val id = (if (s.startsWith("j")) ec[s] else s.toLong()) ?: throw e
+    return this.getAbstractPage(id) ?: throw e
 }
 
 fun PageManager.getPage(s: String, ec: ExecutionContext): Page {
