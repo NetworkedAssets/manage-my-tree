@@ -8,10 +8,7 @@ import com.atlassian.confluence.security.PermissionManager
 import com.atlassian.confluence.spaces.Space
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal
 import com.atlassian.confluence.user.ConfluenceUser
-import org.codehaus.jackson.annotate.JsonCreator
-import org.codehaus.jackson.annotate.JsonProperty
-import org.codehaus.jackson.map.annotate.JsonDeserialize
-import org.codehaus.jackson.map.annotate.JsonSerialize
+import org.codehaus.jackson.annotate.*
 import java.util.*
 
 /**
@@ -48,13 +45,21 @@ data class OriginalPage
         @param:JsonProperty("pageId") val pageId: Long,
         @param:JsonProperty("originalLocation") val originalLocation: Location)
 
-@JsonDeserialize(using = ManagePagesCommandDeserializer::class)
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "commandType")
+@JsonSubTypes(
+        JsonSubTypes.Type(Command.AddPage::class, name = "addPage"),
+        JsonSubTypes.Type(Command.RemovePage::class, name = "removePage"),
+        JsonSubTypes.Type(Command.MovePage::class, name = "movePage"),
+        JsonSubTypes.Type(Command.RenamePage::class, name = "renamePage")
+)
+@JsonIgnoreProperties(ignoreUnknown = true)
 sealed class Command : (PageManager, ExecutionContext) -> Unit {
     abstract fun execute(pageManager: PageManager, ec: ExecutionContext)
     abstract fun revert(pageManager: PageManager)
     override fun invoke(pageManager: PageManager, ec: ExecutionContext) = execute(pageManager, ec)
 
-    @JsonSerialize(using = AddPageSerializer::class)
+    @JsonTypeName("addPage")
     class AddPage(val name: String, val newPageJstreeId: String, val parentId: String) : Command() {
         var confluenceId: Long? = null
         override fun execute(pageManager: PageManager, ec: ExecutionContext) {
@@ -108,9 +113,18 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             return "AddPage(name='$name', newPageJstreeId='$newPageJstreeId', parentId='$parentId', confluenceId=$confluenceId)"
         }
         //endregion
+
+        companion object {
+            @JvmStatic @JsonCreator fun addPage(
+                    @JsonProperty("name") name: String,
+                    @JsonProperty("newPageJstreeId") newPageJstreeId: String,
+                    @JsonProperty("parentId") parentId: String,
+                    @JsonProperty("confluenceId") confluenceId: Long?
+            ) = AddPage(name, newPageJstreeId, parentId).apply { this.confluenceId = confluenceId }
+        }
     }
 
-    @JsonSerialize(using = RemovePageSerializer::class)
+    @JsonTypeName("removePage")
     class RemovePage(val pageId: String) : Command() {
         val removedPages: MutableList<OriginalPage> = mutableListOf()
         var name: String? = null
@@ -145,7 +159,7 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
 
         //region equals, hashCode, toString
 
-        override fun equals(other: Any?): Boolean{
+        override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other?.javaClass != javaClass) return false
 
@@ -158,21 +172,29 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             return true
         }
 
-        override fun hashCode(): Int{
+        override fun hashCode(): Int {
             var result = pageId.hashCode()
             result += 31 * result + removedPages.hashCode()
             result += 31 * result + (name?.hashCode() ?: 0)
             return result
         }
 
-        override fun toString(): String{
+        override fun toString(): String {
             return "RemovePage(pageId='$pageId', removedPages=$removedPages, name=$name)"
         }
 
         //endregion
+
+        companion object {
+            @JvmStatic @JsonCreator fun removePage(
+                    @JsonProperty("pageId") pageId: String,
+                    @JsonProperty("removedPages") removedPages: MutableList<OriginalPage>,
+                    @JsonProperty("name") name: String?
+            ) = RemovePage(pageId).apply { this.removedPages += removedPages; this.name = name }
+        }
     }
 
-    @JsonSerialize(using = MovePageSerializer::class)
+    @JsonTypeName("movePage")
     class MovePage(val pageId: String, val newParentId: String?, val newPosition: Int?) : Command() {
         var movedPage: OriginalPage? = null
         var name: String? = null
@@ -226,7 +248,7 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
 
         //region equals, hashCode, toString
 
-        override fun equals(other: Any?): Boolean{
+        override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other?.javaClass != javaClass) return false
 
@@ -241,7 +263,7 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             return true
         }
 
-        override fun hashCode(): Int{
+        override fun hashCode(): Int {
             var result = pageId.hashCode()
             result += 31 * result + (newParentId?.hashCode() ?: 0)
             result += 31 * result + (newPosition ?: 0)
@@ -250,14 +272,24 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             return result
         }
 
-        override fun toString(): String{
+        override fun toString(): String {
             return "MovePage(pageId='$pageId', newParentId=$newParentId, newPosition=$newPosition, movedPage=$movedPage, name=$name)"
         }
 
         //endregion
+
+        companion object {
+            @JvmStatic @JsonCreator fun movePage(
+                    @JsonProperty("pageId") pageId: String,
+                    @JsonProperty("newParentId") newParentId: String?,
+                    @JsonProperty("newPosition") newPosition: Int?,
+                    @JsonProperty("movedPage") movedPage: OriginalPage?,
+                    @JsonProperty("name") name: String?
+            ) = MovePage(pageId, newParentId, newPosition).apply { this.movedPage = movedPage; this.name = name }
+        }
     }
 
-    @JsonSerialize(using = RenamePageSerializer::class)
+    @JsonTypeName("renamePage")
     class RenamePage(val pageId: String, val newName: String) : Command() {
         var renamedPageId: Long? = null
         var oldName: String? = null
@@ -309,6 +341,15 @@ sealed class Command : (PageManager, ExecutionContext) -> Unit {
             return "RenamePage(pageId='$pageId', newName='$newName', renamedPageId=$renamedPageId, originalPageName=$oldName)"
         }
         //endregion
+
+        companion object {
+            @JvmStatic @JsonCreator fun renamePage(
+                    @JsonProperty("pageId") pageId: String,
+                    @JsonProperty("newName") newName: String,
+                    @JsonProperty("renamedPageId") renamedPageId: Long?,
+                    @JsonProperty("oldName") oldName: String?
+            ) = RenamePage(pageId, newName).apply { this.renamedPageId = renamedPageId; this.oldName = oldName }
+        }
     }
 }
 
