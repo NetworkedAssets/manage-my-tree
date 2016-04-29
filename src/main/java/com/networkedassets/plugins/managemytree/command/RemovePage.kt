@@ -28,6 +28,7 @@ class RemovePage(val pageId: String) : Command() {
             val children = ArrayList(page.sortedChildren).asReversed()
             children.forEach { removePage(it, pageManager, ec) }
 
+
             removedPages += OriginalPage(page.id, Location(page.position, page.parent.id))
         }
 
@@ -76,8 +77,8 @@ class RemovePage(val pageId: String) : Command() {
     companion object {
         @JvmStatic @JsonCreator fun removePage(
                 @JsonProperty("pageId") pageId: String,
-                @JsonProperty("removedPages") removedPages: MutableList<OriginalPage>,
+                @JsonProperty("removedPages") removedPages: MutableList<OriginalPage>?,
                 @JsonProperty("name") name: String?
-        ) = RemovePage(pageId).apply { this.removedPages += removedPages; this.name = name }
+        ) = RemovePage(pageId).apply { if (removedPages != null) this.removedPages += removedPages; this.name = name }
     }
 }

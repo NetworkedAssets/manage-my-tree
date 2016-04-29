@@ -11,6 +11,7 @@ import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 import com.google.common.collect.Lists
 import com.networkedassets.plugins.managemytree.command.Command
 import com.networkedassets.plugins.managemytree.command.ExecutionContext
+import org.codehaus.jackson.annotate.JsonCreator
 import org.codehaus.jackson.annotate.JsonProperty
 import org.codehaus.jackson.map.ObjectMapper
 import org.slf4j.LoggerFactory
@@ -96,7 +97,7 @@ class PageTreeService(
 
     private fun getLastChanges(space: Space): LastChanges? {
         val pluginSettings = pluginSettingsFactory.createSettingsForKey(space.key)
-        val serializedCommands = pluginSettings.get(LAST_COMMANDS) as String
+        val serializedCommands = pluginSettings.get(LAST_COMMANDS) as? String ?: return null
         return OBJECT_MAPPER.readValue(serializedCommands, LastChanges::class.java)
     }
 
@@ -134,6 +135,7 @@ class PageTreeService(
 
             return Response.ok(OBJECT_MAPPER.writeValueAsString(pageTreeInfo)).build()
         } catch (e: Exception) {
+            log.error("Exception: ", e)
             return error(e)
         }
     }
@@ -149,20 +151,23 @@ class PageTreeService(
     }
 }
 
-data class LastChanges(
-        @field:JsonProperty("executedCommands") var executedCommands: List<Command>,
-        @field:JsonProperty("userKey") var userKey: String
+data class LastChanges
+@JsonCreator constructor(
+        @field:JsonProperty @param:JsonProperty("executedCommands") var executedCommands: List<Command>,
+        @field:JsonProperty @param:JsonProperty("userKey") var userKey: String
 )
 
-data class PageTreeInfo(
-        @field:JsonProperty("canCreate") var canCreate: Boolean,
-        @field:JsonProperty("pageTree") var pageTree: JsonPage,
-        @field:JsonProperty("lastChanges") var lastChanges: List<Command>
+data class PageTreeInfo
+@JsonCreator constructor(
+        @field:JsonProperty @param:JsonProperty("canCreate") var canCreate: Boolean,
+        @field:JsonProperty @param:JsonProperty("pageTree") var pageTree: JsonPage,
+        @field:JsonProperty @param:JsonProperty("lastChanges") var lastChanges: List<Command>
 )
 
-data class JsonMessage(
-        var status: Int,
-        var message: String
+data class JsonMessage
+@JsonCreator constructor(
+        @field:JsonProperty @param:JsonProperty("status") var status: Int,
+        @field:JsonProperty @param:JsonProperty("message") var message: String
 )
 
 fun error(message: String) = Response.status(500).entity(JsonMessage(500, message)).build()
