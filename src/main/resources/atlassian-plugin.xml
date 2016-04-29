@@ -4,8 +4,11 @@
         <description>${project.description}</description>
         <version>${project.version}</version>
         <vendor name="${project.organization.name}" url="${project.organization.url}"/>
-        <param name="plugin-icon">images/pluginIcon.png</param>
-        <param name="plugin-logo">images/pluginLogo.png</param>
+        <param name="plugin-icon">images/page_tree.png</param>
+        <param name="plugin-logo">images/page_tree.png</param>
+        <param name="vendor-icon">images/NA_16x16.png</param>
+        <param name="vendor-logo">images/NA_72x72.png</param>
+        <param name="atlassian-licensing-enabled">true</param>
     </plugin-info>
 
     <!-- add our i18n resource -->
@@ -81,5 +84,7 @@
                       interface="com.atlassian.sal.api.pluginsettings.PluginSettingsFactory"/>
     <component-import key="soyTemplateRenderer"
                       interface="com.atlassian.soy.renderer.SoyTemplateRenderer"/>
+    <component-import key="pluginLicenseManager"
+                      interface="com.atlassian.upm.api.license.PluginLicenseManager"/>
 
 </atlassian-plugin>
