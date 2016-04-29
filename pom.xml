@@ -63,7 +63,7 @@
                     <productVersion>${confluence.version}</productVersion>
                     <productDataVersion>${confluence.data.version}</productDataVersion>
                     <instructions>
-                        <Export-Package>com.networkedassets.plugins.addpagetree</Export-Package>
+                        <Export-Package>com.networkedassets.plugins.managemytree</Export-Package>
                     </instructions>
                 </configuration>
             </plugin>
