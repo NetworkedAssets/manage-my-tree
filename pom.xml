@@ -14,7 +14,7 @@
         <url>http://www.networkedassets.com/</url>
     </organization>
 
-    <name>add-pagetree</name>
+    <name>Manage My Tree</name>
     <description>The Pagetree Manager Plugin allows for easy pagetree management. The plugin allows for bulk adding, removing, and renaming pages.</description>
     <packaging>atlassian-plugin</packaging>
 
