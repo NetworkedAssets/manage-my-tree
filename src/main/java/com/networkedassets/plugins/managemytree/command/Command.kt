@@ -87,10 +87,8 @@ fun PageManager.setPagePosition(page: Page, newPosition: Int?) {
 
 val Page.truePosition: Int
     get() {
-        var i = 0;
-        for (child in this.parent.sortedChildren) {
+        this.parent.sortedChildren.forEachIndexed { i, child ->
             if (child == this) return i
-            i++
         }
         throw IllegalArgumentException("Page is not in its parent's children list")
     }
