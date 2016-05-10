@@ -84,3 +84,13 @@ fun PageManager.setPagePosition(page: Page, newPosition: Int?) {
         else -> movePageAfter(page, children[newPosition - 1])
     }
 }
+
+val Page.truePosition: Int
+    get() {
+        var i = 0;
+        for (child in this.parent.sortedChildren) {
+            if (child == this) return i
+            i++
+        }
+        throw IllegalArgumentException("Page is not in its parent's children list")
+    }

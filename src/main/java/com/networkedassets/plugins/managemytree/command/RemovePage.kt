@@ -29,7 +29,7 @@ class RemovePage(val pageId: String) : Command() {
             children.forEach { removePage(it, pageManager, ec) }
 
 
-            removedPages += OriginalPage(page.id, Location(page.position, page.parent.id))
+            removedPages += OriginalPage(page.id, Location(page.truePosition, page.parent.id))
         }
 
         pageManager.trashPage(page)
@@ -75,6 +75,7 @@ class RemovePage(val pageId: String) : Command() {
     //endregion
 
     companion object {
+        @Suppress("unused")
         @JvmStatic @JsonCreator fun removePage(
                 @JsonProperty("pageId") pageId: String,
                 @JsonProperty("removedPages") removedPages: MutableList<OriginalPage>?,

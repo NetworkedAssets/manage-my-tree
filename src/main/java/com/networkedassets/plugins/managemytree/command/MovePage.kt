@@ -18,21 +18,14 @@ class MovePage(val pageId: String, val newParentId: String?, val newPosition: In
         if (!ec.canEdit(page))
             throw PermissionException("""Cannot move page "${page.title}": insufficient permissions!""")
 
-        movedPage = OriginalPage(page.id, Location(getTruePosition(page), page.parent.id))
+        movedPage = OriginalPage(page.id, Location(page.truePosition, page.parent.id))
         name = page.title
 
         moveAsChildIfNecessary(page, newParentId, pageManager, ec)
         pageManager.setPagePosition(page, newPosition)
     }
 
-    private fun getTruePosition(page: Page): Int {
-        var i = 0;
-        for (child in page.parent.sortedChildren) {
-            if (child == page) return i
-            i++
-        }
-        throw IllegalArgumentException("Page is not in its parent's children list")
-    }
+
 
     private fun moveAsChildIfNecessary(page: Page, newParentId: String?, pageManager: PageManager, ec: ExecutionContext) {
         if (newParentId == null) return
@@ -92,6 +85,7 @@ class MovePage(val pageId: String, val newParentId: String?, val newPosition: In
     //endregion
 
     companion object {
+        @Suppress("unused")
         @JvmStatic @JsonCreator fun movePage(
                 @JsonProperty("pageId") pageId: String,
                 @JsonProperty("newParentId") newParentId: String?,
