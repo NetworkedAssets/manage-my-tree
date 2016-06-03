@@ -2,6 +2,8 @@ package com.networkedassets.plugins.managemytree
 
 import com.atlassian.confluence.pages.Page
 import com.atlassian.confluence.pages.PageManager
+import com.atlassian.confluence.plugins.createcontent.SpaceBlueprintManager
+import com.atlassian.confluence.plugins.createcontent.actions.BlueprintContentGenerator
 import com.atlassian.confluence.security.Permission
 import com.atlassian.confluence.security.PermissionManager
 import com.atlassian.confluence.spaces.Space
@@ -9,8 +11,8 @@ import com.atlassian.confluence.spaces.SpaceManager
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 import com.google.common.collect.Lists
-import com.networkedassets.plugins.managemytree.command.Command
-import com.networkedassets.plugins.managemytree.command.ExecutionContext
+import com.networkedassets.plugins.managemytree.commands.InsertTemplate
+import com.networkedassets.plugins.managemytree.commands.Template
 import org.codehaus.jackson.annotate.JsonCreator
 import org.codehaus.jackson.annotate.JsonProperty
 import org.codehaus.jackson.map.ObjectMapper
@@ -29,7 +31,9 @@ class PageTreeService(
         private val pageManager: PageManager,
         private val permissionManager: PermissionManager,
         private val spaceManager: SpaceManager,
-        private val pluginSettingsFactory: PluginSettingsFactory
+        private val pluginSettingsFactory: PluginSettingsFactory,
+        private val spaceBlueprintManager: SpaceBlueprintManager,
+        private val blueprintContentGenerator: BlueprintContentGenerator
 ) {
     @POST
     @Path("manage")
@@ -52,11 +56,11 @@ class PageTreeService(
     }
 
     private fun executeCommands(s: Space, commands: List<Command>): Response? {
-        val ec = ExecutionContext(permissionManager, s)
+        val ec = ExecutionContext(permissionManager, spaceBlueprintManager, blueprintContentGenerator, s)
         val executedCommands = ArrayList<Command>(commands.size)
         for (command in commands) {
             try {
-                command.execute(pageManager, ec)
+                command(pageManager, ec)
             } catch (e: Exception) {
                 revertCommands(executedCommands, s)
                 return error(e)
@@ -87,7 +91,6 @@ class PageTreeService(
         }
     }
 
-    @Throws(IOException::class)
     private fun persistLastChanges(executedCommands: List<Command>, ec: ExecutionContext) {
         val pluginSettings = pluginSettingsFactory.createSettingsForKey(ec.space.key)
         val lc = LastChanges(executedCommands, AuthenticatedUserThreadLocal.get().key.stringValue)
@@ -105,7 +108,7 @@ class PageTreeService(
         for (executedCommand in Lists.reverse(executedCommands)) {
             executedCommand.revert(pageManager)
         }
-        persistLastChanges(ArrayList<Command>(), ExecutionContext(permissionManager, s))
+        persistLastChanges(ArrayList<Command>(), ExecutionContext(permissionManager, spaceBlueprintManager, blueprintContentGenerator, s))
     }
 
     @GET
@@ -113,6 +116,7 @@ class PageTreeService(
     @Produces("application/json")
     fun getPageTree(@QueryParam("space") spaceKey: String, @QueryParam("rootPageId") rootId: Long?): Response {
         try {
+            InsertTemplate("foo", Template.Custom(42)).execute(pageManager, ExecutionContext(permissionManager, spaceBlueprintManager, blueprintContentGenerator, spaceManager.allSpaces[0], hashMapOf()))
             val space = spaceManager.getSpace(spaceKey)
             if (isUnauthorized(space)) return error("Unauthorized")
 

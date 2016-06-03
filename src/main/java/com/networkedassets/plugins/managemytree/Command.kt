@@ -1,13 +1,16 @@
-package com.networkedassets.plugins.managemytree.command
+package com.networkedassets.plugins.managemytree
 
 import com.atlassian.confluence.pages.AbstractPage
 import com.atlassian.confluence.pages.Page
 import com.atlassian.confluence.pages.PageManager
+import com.atlassian.confluence.plugins.createcontent.SpaceBlueprintManager
+import com.atlassian.confluence.plugins.createcontent.actions.BlueprintContentGenerator
 import com.atlassian.confluence.security.Permission
 import com.atlassian.confluence.security.PermissionManager
 import com.atlassian.confluence.spaces.Space
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal
 import com.atlassian.confluence.user.ConfluenceUser
+import com.networkedassets.plugins.managemytree.commands.*
 import org.codehaus.jackson.annotate.*
 import java.util.*
 
@@ -24,6 +27,8 @@ import java.util.*
 class ExecutionContext
 @JvmOverloads constructor(
         val permissionManager: PermissionManager,
+        val spaceBlueprintManager: SpaceBlueprintManager,
+        val blueprintContentGenerator: BlueprintContentGenerator,
         val space: Space,
         val idMapping: MutableMap<String, Long> = HashMap())
 : MutableMap<String, Long> by idMapping {
@@ -52,14 +57,14 @@ data class OriginalPage
         JsonSubTypes.Type(AddPage::class, name = "addPage"),
         JsonSubTypes.Type(RemovePage::class, name = "removePage"),
         JsonSubTypes.Type(MovePage::class, name = "movePage"),
-        JsonSubTypes.Type(RenamePage::class, name = "renamePage")
+        JsonSubTypes.Type(RenamePage::class, name = "renamePage"),
+        JsonSubTypes.Type(InsertTemplate::class, name = "insertTemplate")
 )
 @JsonIgnoreProperties(ignoreUnknown = true)
 abstract class Command : (PageManager, ExecutionContext) -> Unit {
     abstract fun execute(pageManager: PageManager, ec: ExecutionContext)
     abstract fun revert(pageManager: PageManager)
     override fun invoke(pageManager: PageManager, ec: ExecutionContext) = execute(pageManager, ec)
-
 }
 
 fun PageManager.getAbstractPage(s: String, ec: ExecutionContext): AbstractPage {

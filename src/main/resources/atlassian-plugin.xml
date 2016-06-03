@@ -28,7 +28,7 @@
                   location="/js/jstree/themes/default/style.css"/>
 
         <resource type="download" name="add-pagetree.css" location="/css/add-pagetree.css"/>
-        <resource type="download" name="command.js" location="/js/command.js" />
+        <resource type="download" name="command.js" location="/js/command.js"/>
         <resource type="download" name="manage-pagetree.js" location="/js/manage-pagetree.js"/>
 
         <resource type="download" name="images/" location="/images"/>
@@ -86,5 +86,10 @@
                       interface="com.atlassian.soy.renderer.SoyTemplateRenderer"/>
     <component-import key="pluginLicenseManager"
                       interface="com.atlassian.upm.api.license.PluginLicenseManager"/>
+
+    <component-import key="spaceBlueprintManager"
+                      interface="com.atlassian.confluence.plugins.createcontent.SpaceBlueprintManager"/>
+    <component-import key="blueprintContentGenerator"
+                      interface="com.atlassian.confluence.plugins.createcontent.actions.BlueprintContentGenerator"/>
 
 </atlassian-plugin>

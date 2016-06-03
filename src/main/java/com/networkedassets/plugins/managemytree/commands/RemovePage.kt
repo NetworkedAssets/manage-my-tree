@@ -1,9 +1,10 @@
-package com.networkedassets.plugins.managemytree.command
+package com.networkedassets.plugins.managemytree.commands
 
 import com.atlassian.confluence.api.service.exceptions.PermissionException
 import com.atlassian.confluence.pages.AbstractPage
 import com.atlassian.confluence.pages.Page
 import com.atlassian.confluence.pages.PageManager
+import com.networkedassets.plugins.managemytree.*
 import org.codehaus.jackson.annotate.JsonCreator
 import org.codehaus.jackson.annotate.JsonProperty
 import org.codehaus.jackson.annotate.JsonTypeName

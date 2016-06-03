@@ -1,5 +1,8 @@
+import com.networkedassets.plugins.managemytree.Command;
 import com.networkedassets.plugins.managemytree.JsonMessage;
-import com.networkedassets.plugins.managemytree.command.*;
+import com.networkedassets.plugins.managemytree.Location;
+import com.networkedassets.plugins.managemytree.OriginalPage;
+import com.networkedassets.plugins.managemytree.commands.*;
 import junit.framework.Assert;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
@@ -39,5 +42,10 @@ public class CommandTest {
         final String rnps = om.writeValueAsString(rnp);
         final Command rnpd = om.readValue(rnps, Command.class);
         Assert.assertEquals(rnp, rnpd);
+
+        final InsertTemplate inp = new InsertTemplate("foo", new Template.FromBlueprint("bar"));
+        final String inps = om.writeValueAsString(inp);
+        final Command inpd = om.readValue(inps, Command.class);
+        Assert.assertEquals(inp, inpd);
     }
 }
