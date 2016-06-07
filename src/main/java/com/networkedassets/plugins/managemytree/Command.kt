@@ -3,8 +3,6 @@ package com.networkedassets.plugins.managemytree
 import com.atlassian.confluence.pages.AbstractPage
 import com.atlassian.confluence.pages.Page
 import com.atlassian.confluence.pages.PageManager
-import com.atlassian.confluence.plugins.createcontent.SpaceBlueprintManager
-import com.atlassian.confluence.plugins.createcontent.actions.BlueprintContentGenerator
 import com.atlassian.confluence.security.Permission
 import com.atlassian.confluence.security.PermissionManager
 import com.atlassian.confluence.spaces.Space
@@ -27,8 +25,8 @@ import java.util.*
 class ExecutionContext
 @JvmOverloads constructor(
         val permissionManager: PermissionManager,
-        val spaceBlueprintManager: SpaceBlueprintManager,
-        val blueprintContentGenerator: BlueprintContentGenerator,
+//        val spaceBlueprintManager: SpaceBlueprintManager,
+//        val blueprintContentGenerator: BlueprintContentGenerator,
         val space: Space,
         val idMapping: MutableMap<String, Long> = HashMap())
 : MutableMap<String, Long> by idMapping {
@@ -92,8 +90,7 @@ fun PageManager.setPagePosition(page: Page, newPosition: Int?) {
 
 val Page.truePosition: Int
     get() {
-        this.parent.sortedChildren.forEachIndexed { i, child ->
-            if (child == this) return i
-        }
+        val i = this.parent.sortedChildren.indexOf(this)
+        if (i != -1) return i
         throw IllegalArgumentException("Page is not in its parent's children list")
     }

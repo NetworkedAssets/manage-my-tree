@@ -2,8 +2,6 @@ package com.networkedassets.plugins.managemytree
 
 import com.atlassian.confluence.pages.Page
 import com.atlassian.confluence.pages.PageManager
-import com.atlassian.confluence.plugins.createcontent.SpaceBlueprintManager
-import com.atlassian.confluence.plugins.createcontent.actions.BlueprintContentGenerator
 import com.atlassian.confluence.security.Permission
 import com.atlassian.confluence.security.PermissionManager
 import com.atlassian.confluence.spaces.Space
@@ -12,7 +10,6 @@ import com.atlassian.confluence.user.AuthenticatedUserThreadLocal
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 import com.google.common.collect.Lists
 import com.networkedassets.plugins.managemytree.commands.InsertTemplate
-import com.networkedassets.plugins.managemytree.commands.Template
 import org.codehaus.jackson.annotate.JsonCreator
 import org.codehaus.jackson.annotate.JsonProperty
 import org.codehaus.jackson.map.ObjectMapper
@@ -31,10 +28,15 @@ class PageTreeService(
         private val pageManager: PageManager,
         private val permissionManager: PermissionManager,
         private val spaceManager: SpaceManager,
-        private val pluginSettingsFactory: PluginSettingsFactory,
-        private val spaceBlueprintManager: SpaceBlueprintManager,
-        private val blueprintContentGenerator: BlueprintContentGenerator
+        private val pluginSettingsFactory: PluginSettingsFactory
 ) {
+//    val spaceBlueprintManager by lazy {
+//        ContainerManager.getComponent("spaceBlueprintManager", SpaceBlueprintManager::class.java)
+//    }
+//    val blueprintContentGenerator by lazy {
+//        ContainerManager.getComponent("blueprintContentGenerator", BlueprintContentGenerator::class.java)
+//    }
+
     @POST
     @Path("manage")
     @Produces("application/json")
@@ -56,7 +58,7 @@ class PageTreeService(
     }
 
     private fun executeCommands(s: Space, commands: List<Command>): Response? {
-        val ec = ExecutionContext(permissionManager, spaceBlueprintManager, blueprintContentGenerator, s)
+        val ec = ExecutionContext(permissionManager, /*spaceBlueprintManager, blueprintContentGenerator,*/ s)
         val executedCommands = ArrayList<Command>(commands.size)
         for (command in commands) {
             try {
@@ -108,15 +110,23 @@ class PageTreeService(
         for (executedCommand in Lists.reverse(executedCommands)) {
             executedCommand.revert(pageManager)
         }
-        persistLastChanges(ArrayList<Command>(), ExecutionContext(permissionManager, spaceBlueprintManager, blueprintContentGenerator, s))
+        persistLastChanges(ArrayList<Command>(), ExecutionContext(permissionManager, /*spaceBlueprintManager, blueprintContentGenerator,*/ s))
     }
 
     @GET
     @Path("pagetree")
     @Produces("application/json")
     fun getPageTree(@QueryParam("space") spaceKey: String, @QueryParam("rootPageId") rootId: Long?): Response {
+        println("YO!!!!!")
         try {
-            InsertTemplate("foo", Template.Custom(42)).execute(pageManager, ExecutionContext(permissionManager, spaceBlueprintManager, blueprintContentGenerator, spaceManager.allSpaces[0], hashMapOf()))
+            InsertTemplate("foo", TemplateId.Custom(42)).execute(pageManager,
+                    ExecutionContext(
+                            permissionManager,
+                            //spaceBlueprintManager,
+                            //blueprintContentGenerator,
+                            spaceManager.allSpaces[0]
+                    )
+            )
             val space = spaceManager.getSpace(spaceKey)
             if (isUnauthorized(space)) return error("Unauthorized")
 

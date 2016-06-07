@@ -77,6 +77,17 @@
         <description>Provides REST endpoints used by Manage My Tree plugin</description>
     </rest>
 
+    <component name="Outline Template Service" key="templateService"
+               class="com.networkedassets.plugins.managemytree.TemplateService" />
+
+    <component name="Custom Template AO Manager" key="customTemplateManager"
+               class="com.networkedassets.plugins.managemytree.CustomTemplateManager" />
+
+    <ao key="ao-module">
+        <entity>com.networkedassets.plugins.managemytree.CustomOutlineEntity</entity>
+        <entity>com.networkedassets.plugins.managemytree.CustomTemplateEntity</entity>
+    </ao>
+
     <!-- imports -->
     <component-import key="applicationProperties"
                       interface="com.atlassian.sal.api.ApplicationProperties"/>
@@ -86,10 +97,12 @@
                       interface="com.atlassian.soy.renderer.SoyTemplateRenderer"/>
     <component-import key="pluginLicenseManager"
                       interface="com.atlassian.upm.api.license.PluginLicenseManager"/>
+    <component-import key="ao"
+                      interface="com.atlassian.activeobjects.external.ActiveObjects"/>
 
-    <component-import key="spaceBlueprintManager"
-                      interface="com.atlassian.confluence.plugins.createcontent.SpaceBlueprintManager"/>
-    <component-import key="blueprintContentGenerator"
-                      interface="com.atlassian.confluence.plugins.createcontent.actions.BlueprintContentGenerator"/>
+    <!--<component-import key="contentBlueprintManager"-->
+                      <!--interface="com.atlassian.confluence.plugins.createcontent.ContentBlueprintManager"/>-->
+    <!--<component-import key="blueprintContentGenerator"-->
+                      <!--interface="com.atlassian.confluence.plugins.createcontent.actions.BlueprintContentGenerator"/>-->
 
 </atlassian-plugin>

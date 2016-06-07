@@ -29,7 +29,6 @@ class RemovePage(val pageId: String) : Command() {
             val children = ArrayList(page.sortedChildren).asReversed()
             children.forEach { removePage(it, pageManager, ec) }
 
-
             removedPages += OriginalPage(page.id, Location(page.truePosition, page.parent.id))
         }
 
