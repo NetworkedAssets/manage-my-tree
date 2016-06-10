@@ -18,7 +18,6 @@ class AddPage(val name: String, val newPageJstreeId: String, val parentId: Strin
         val page = Page()
         page.title = name
         page.space = parent.space
-        page.setParentPage(parent)
         parent.addChild(page)
         page.version = 1
 

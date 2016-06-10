@@ -84,8 +84,8 @@
                class="com.networkedassets.plugins.managemytree.CustomTemplateManager" />
 
     <ao key="ao-module">
-        <entity>com.networkedassets.plugins.managemytree.CustomOutlineEntity</entity>
-        <entity>com.networkedassets.plugins.managemytree.CustomTemplateEntity</entity>
+        <entity>com.networkedassets.plugins.managemytree.CustomOutlineAO</entity>
+        <entity>com.networkedassets.plugins.managemytree.CustomTemplateAO</entity>
     </ao>
 
     <!-- imports -->

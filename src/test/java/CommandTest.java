@@ -1,20 +1,19 @@
-import com.networkedassets.plugins.managemytree.Command;
-import com.networkedassets.plugins.managemytree.Location;
-import com.networkedassets.plugins.managemytree.OriginalPage;
-import com.networkedassets.plugins.managemytree.TemplateId;
+import com.google.common.collect.Lists;
+import com.networkedassets.plugins.managemytree.*;
 import com.networkedassets.plugins.managemytree.commands.*;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 
 public class CommandTest {
+    private final ObjectMapper om = new ObjectMapper();
+
     @Test
     public void testSerializeCommand() throws IOException {
-        final ObjectMapper om = new ObjectMapper();
-
         final AddPage ap = new AddPage("a", "j1", "2");
         ap.setConfluenceId(2L);
         final String aps = om.writeValueAsString(ap);
@@ -42,14 +41,36 @@ public class CommandTest {
         final Command rnpd = om.readValue(rnps, Command.class);
         assertEquals(rnp, rnpd);
 
-        final InsertTemplate inp = new InsertTemplate("foo", new TemplateId.FromBlueprint("bar"));
+        final InsertTemplate inp = new InsertTemplate(
+                "foo",
+                new TemplateId.FromBlueprint("bar"),
+                Collections.singletonMap(2, "b")
+        );
+        inp.getInsertedPages().add(2L);
         final String inps = om.writeValueAsString(inp);
         final Command inpd = om.readValue(inps, Command.class);
         assertEquals(inp, inpd);
 
-        final InsertTemplate inp2 = new InsertTemplate("foo", new TemplateId.Custom(42));
+        final InsertTemplate inp2 = new InsertTemplate(
+                "foo",
+                new TemplateId.Custom(42),
+                Collections.singletonMap(1, "a")
+        );
+        inp2.getInsertedPages().add(3L);
         final String inps2 = om.writeValueAsString(inp2);
         final Command inpd2 = om.readValue(inps2, Command.class);
         assertEquals(inp2, inpd2);
+    }
+
+    @Test
+    public void testSerializeOutline() throws IOException {
+        final CustomOutline o = new CustomOutline("foo", Lists.newArrayList(), null);
+        final String s = "{\"title\": \"foo\", \"children\": []}";
+        CustomOutline customOutline = om.readValue(s, CustomOutline.class);
+        assertEquals(customOutline, o);
+
+        final CustomTemplate t = new CustomTemplate("bar", o);
+        CustomTemplate customTemplate = om.readValue(om.writeValueAsString(t), CustomTemplate.class);
+        assertEquals(customTemplate, t);
     }
 }

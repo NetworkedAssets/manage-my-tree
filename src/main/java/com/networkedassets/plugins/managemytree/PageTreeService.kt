@@ -9,7 +9,6 @@ import com.atlassian.confluence.spaces.SpaceManager
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 import com.google.common.collect.Lists
-import com.networkedassets.plugins.managemytree.commands.InsertTemplate
 import org.codehaus.jackson.annotate.JsonCreator
 import org.codehaus.jackson.annotate.JsonProperty
 import org.codehaus.jackson.map.ObjectMapper
@@ -117,16 +116,8 @@ class PageTreeService(
     @Path("pagetree")
     @Produces("application/json")
     fun getPageTree(@QueryParam("space") spaceKey: String, @QueryParam("rootPageId") rootId: Long?): Response {
-        println("YO!!!!!")
+//        println("YO!!!!!")
         try {
-            InsertTemplate("foo", TemplateId.Custom(42)).execute(pageManager,
-                    ExecutionContext(
-                            permissionManager,
-                            //spaceBlueprintManager,
-                            //blueprintContentGenerator,
-                            spaceManager.allSpaces[0]
-                    )
-            )
             val space = spaceManager.getSpace(spaceKey)
             if (isUnauthorized(space)) return error("Unauthorized")
 
