@@ -18,13 +18,13 @@ class InsertTemplate(
 
     override fun execute(pageManager: PageManager, ec: ExecutionContext) {
         when (templateId) {
-            is TemplateId.Custom -> executeCustom(templateId.customOutlineId, pageManager, ec)
+            is TemplateId.Custom -> executeCustom(templateId, pageManager, ec)
             is TemplateId.FromBlueprint -> executeBlueprint(pageManager, ec)
         }
     }
 
-    private fun executeCustom(id: Int, pageManager: PageManager, ec: ExecutionContext) {
-        val template = CustomTemplateManager.instance.getById(id)
+    private fun executeCustom(templateId: TemplateId.Custom, pageManager: PageManager, ec: ExecutionContext) {
+        val template = templateId.getFromDb()
         val parent = pageManager.getPage(parentId, ec)
         val root = template.root
 
@@ -59,7 +59,7 @@ class InsertTemplate(
     }
 
     //region equals, hashcode, toString
-    override fun equals(other: Any?): Boolean{
+    override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other?.javaClass != javaClass) return false
 
@@ -73,7 +73,7 @@ class InsertTemplate(
         return true
     }
 
-    override fun hashCode(): Int{
+    override fun hashCode(): Int {
         var result = parentId.hashCode()
         result = 31 * result + templateId.hashCode()
         result = 31 * result + newPageJstreeIds.hashCode()
@@ -81,7 +81,7 @@ class InsertTemplate(
         return result
     }
 
-    override fun toString(): String{
+    override fun toString(): String {
         return "InsertTemplate(parentId='$parentId', templateId=$templateId, newPageJstreeIds=$newPageJstreeIds, insertedPages=$insertedPages)"
     }
     //endregion

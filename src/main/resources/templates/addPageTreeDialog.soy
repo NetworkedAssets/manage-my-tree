@@ -26,16 +26,28 @@
     <form class="aui pagetree-buttons" action="javascript:void(0)">
         <div class="aui-buttons">
             <button id="manage-pagetree-create-page-button" class="aui-button aui-button-primary">Create</button>
+            <a id="manage-pagetree-insert-template-button"
+                    class="aui-button aui-dropdown2-trigger"
+                    aria-owns="pagetree-template-list"
+                    aria-haspopup="true"
+                    href="#pagetree-template-list">
+                Template
+            </a>
+            <div id="pagetree-template-list"
+                 class="aui-dropdown2 aui-style-default"
+                 style="z-index: 4000">
+                <ul id="pagetree-template-list-inner" class="aui-list-truncate">
+
+                </ul>
+            </div>
             <button id="manage-pagetree-rename-page-button" class="aui-button">Rename</button>
             <button id="manage-pagetree-remove-page-button" class="aui-button">Remove</button>
         </div>
-        <button
-                id="manage-pagetree-undo-button"
+        <button id="manage-pagetree-undo-button"
                 class="aui-button"
                 style="float: right"
                 data-aui-trigger
-                aria-controls="add-page-tree-dialog-really-undo-dialog"
-        >
+                aria-controls="add-page-tree-dialog-really-undo-dialog">
             <span class="aui-icon aui-icon-small aui-iconfont-undo"></span>&nbsp;Undo
         </button>
     </form>
@@ -49,12 +61,11 @@
     <footer class="aui-dialog2-footer">
         <!-- Actions to render on the right of the footer -->
         <div class="aui-dialog2-footer-actions">
-            <button
-                    data-aui-trigger
+            <button data-aui-trigger
                     aria-controls="add-page-tree-dialog-really-save-dialog"
                     id="add-page-tree-dialog-save-button"
-                    class="aui-button aui-button-primary"
-            >Save
+                    class="aui-button aui-button-primary">
+                Save
             </button>
 
             <button id="add-page-tree-dialog-close-button" class="aui-button aui-button-link">Cancel</button>
@@ -64,16 +75,18 @@
     </footer>
 </section>
 <aui-inline-dialog2 id="add-page-tree-dialog-really-save-dialog"
-                                         class="aui-layer aui-inline-dialog"
-                                         data-aui-alignment=""
-                                         data-aui-responds-to="toggle"
-                                         aria-hidden="true">
+                    class="aui-layer aui-inline-dialog"
+                    data-aui-alignment=""
+                    data-aui-responds-to="toggle"
+                    aria-hidden="true">
     <div class="aui-inline-dialog-contents">
         <h3>Are you sure?</h3>
         <p>Do you really want to commit these changes:</p>
         <ul id="pagetree-action-list"></ul>
         <p>
-            <button id="add-page-tree-dialog-really-save-button" class="aui-button aui-button-secondary">Yes, commit the changes</button>
+            <button id="add-page-tree-dialog-really-save-button" class="aui-button aui-button-secondary">Yes, commit the
+                changes
+            </button>
     </div>
 </aui-inline-dialog2>
 <aui-inline-dialog2 id="add-page-tree-dialog-really-undo-dialog"
@@ -86,7 +99,10 @@
         <p>Do you really want to undo these changes:</p>
         <ul id="pagetree-undo-action-list"></ul>
         <p>
-            <button id="add-page-tree-dialog-really-undo-button" class="aui-button aui-button-secondary">Yes, undo the changes</button>
+            <button id="add-page-tree-dialog-really-undo-button" class="aui-button aui-button-secondary">Yes, undo the
+                changes
+            </button>
     </div>
 </aui-inline-dialog2>
+
 {/template}

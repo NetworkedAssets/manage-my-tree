@@ -29,6 +29,7 @@
 
         <resource type="download" name="add-pagetree.css" location="/css/add-pagetree.css"/>
         <resource type="download" name="command.js" location="/js/command.js"/>
+        <resource type="download" name="templates.js" location="/js/templates.js"/>
         <resource type="download" name="manage-pagetree.js" location="/js/manage-pagetree.js"/>
 
         <resource type="download" name="images/" location="/images"/>

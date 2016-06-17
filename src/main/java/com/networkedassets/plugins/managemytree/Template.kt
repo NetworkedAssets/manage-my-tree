@@ -116,8 +116,15 @@ class TemplateService {
     }
 
     @GET
-    fun getAll(): Response =
-            Response.ok().entity(customTemplateManager.getAll().asJson()).build()
+    fun getAll(@DefaultValue("true") @QueryParam("withBody") withBody: Boolean): Response =
+            Response.ok().entity(
+                    if (withBody)
+                        customTemplateManager.getAll().asJson()
+                    else
+                        customTemplateManager.getAll()
+                                .map { object { val name = it.name; val id = it.id } }
+                                .asJson()
+            ).build()
 
     init {
         _instance = this
