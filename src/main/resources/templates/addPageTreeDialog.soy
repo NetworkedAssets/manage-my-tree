@@ -27,22 +27,34 @@
         <div class="aui-buttons">
             <button id="manage-pagetree-create-page-button" class="aui-button aui-button-primary">Create</button>
             <a id="manage-pagetree-insert-template-button"
-                    class="aui-button aui-dropdown2-trigger"
-                    aria-owns="pagetree-template-list"
-                    aria-haspopup="true"
-                    href="#pagetree-template-list">
+               class="aui-button aui-dropdown2-trigger"
+               aria-owns="pagetree-template-list"
+               aria-haspopup="true"
+               href="#pagetree-template-list">
                 Template
             </a>
             <div id="pagetree-template-list"
                  class="aui-dropdown2 aui-style-default"
                  style="z-index: 4000">
-                <ul id="pagetree-template-list-inner" class="aui-list-truncate">
+                <div class="aui-dropdown2-section">
+                    <ul id="pagetree-template-list-inner">
 
-                </ul>
+                    </ul>
+                </div>
+                <div class="aui-dropdown2-section">
+                    <ul>
+                        <li><a href="javascript:void(0)"
+                               onclick="document.getElementById('template-upload-input').click(); return false;">
+                            Upload template
+                        </a></li>
+                    </ul>
+                </div>
             </div>
             <button id="manage-pagetree-rename-page-button" class="aui-button">Rename</button>
             <button id="manage-pagetree-remove-page-button" class="aui-button">Remove</button>
         </div>
+        <input type="file" id="template-upload-input" style="visibility: hidden; width: 1px; height: 1px;"
+               accept=".opml,.xml, application/xml"/>
         <button id="manage-pagetree-undo-button"
                 class="aui-button"
                 style="float: right"

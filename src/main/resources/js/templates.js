@@ -1,5 +1,5 @@
 TemplateService = (function ($, undefined){
-    var templatesUrl = Confluence.getBaseUrl() + "/rest/pagetree/1.0/templates"
+    var templatesUrl = Confluence.getBaseUrl() + "/rest/pagetree/1.0/templates";
     return {
         getTemplateList: function (callback) {
             $.ajax({
@@ -12,14 +12,41 @@ TemplateService = (function ($, undefined){
                 }
             });
         },
-        getTemplateById: function (templateId, callback) {
+        getTemplateById: function (templateId, templateType, callback) {
+            if (templateType == "custom") {
+                $.ajax({
+                    type: "GET",
+                    url: templatesUrl + "/" + templateId,
+                    dataType: "json",
+                    success: callback,
+                    error: function () {
+                        eval("debugger;")
+                    }
+                });
+            }
+        },
+        removeTemplateById: function (templateId, templateType, callback) {
+            if (templateType == "custom") {
+                $.ajax({
+                    type: "DELETE",
+                    url: templatesUrl + "/" + templateId,
+                    success: callback,
+                    error: function () {
+                        eval("debugger;")
+                    }
+                });
+            }
+        },
+        fromFile: function (file, callback) {
             $.ajax({
-                type: "GET",
-                url: templatesUrl+"/" + templateId,
+                type: "POST",
+                url: templatesUrl,
                 dataType: "json",
+                contentType: "application/xml",
+                data: file,
                 success: callback,
                 error: function () {
-                    eval("debugger;")
+                    eval("debugger;");
                 }
             });
         }

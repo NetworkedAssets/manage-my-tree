@@ -67,9 +67,34 @@
             });
         }
     }
-    
-    function insert_template(parent_id, template_id) {
-        
+
+    function insert_template(parent_id, template) {
+        var jstree = tree.jstree(true);
+
+        if (!can_create) return false;
+
+        console.log(template);
+        var jstree_ids = {};
+        for (var i = 0; i < template.outlines.length; ++i) {
+            insert_tree(jstree, parent_id, template.outlines[i], jstree_ids);
+        }
+        jstree.open_node(parent_id);
+
+        ManagePagetreeCommand.insertTemplate(template.id, parent_id, jstree_ids, template.name);
+
+        console.log(JSON.stringify(ManagePagetreeCommand.getCommands()));
+    }
+
+    function insert_tree(jstree, parent_id, tree, jstree_ids) {
+        var child = jstree.create_node(parent_id, {
+            text: tree.title,
+            type: "new"
+        });
+        jstree_ids[tree.id] = child;
+        for (var i = 0; i < tree.children.length; ++i) {
+            insert_tree(jstree, child, tree.children[i], jstree_ids);
+        }
+        jstree.open_node(child);
     }
 
     function rename_page(page_id) {
@@ -77,7 +102,7 @@
 
         var page = jstree.get_node(page_id);
         var oldName = page.text;
-        if (!page.a_attr.data_canEdit) return false;
+        if (!(page.type == "new" || page.a_attr.data_canEdit)) return false;
 
         jstree.edit(page, null, function (page) {
             ManagePagetreeCommand.renamePage(page_id, page.text, oldName);
@@ -88,7 +113,7 @@
         var jstree = tree.jstree(true);
 
         var page = jstree.get_node(page_id);
-        if (!page.a_attr.data_canRemove) return false;
+        if (!(page.type == "new" || page.a_attr.data_canRemove)) return false;
         var pageName = page.text;
 
         jstree.delete_node(page_id);
@@ -116,20 +141,26 @@
             create_page(selected[0]);
         });
 
-        var span_remove = '<span class="template-remove aui-icon aui-icon-small aui-iconfont-close-dialog" style="float: right; top: 2px"></span>';
-        var span_sure = '<span class="template-remove-sure" style="float: right; text-decoration: underline">Remove?</span>'
+        var span_remove = '<span class="template-remove aui-icon aui-icon-small aui-iconfont-close-dialog" ' +
+            'style="float: right; top: 2px; margin-left: 5px"></span>';
+        var span_sure = '<span class="template-remove-sure" ' +
+            'style="float: right; text-decoration: underline; margin-left: 5px">Remove?</span>';
 
-        $("#manage-pagetree-insert-template-button").click(function() {
-            TemplateService.getTemplateList(function(templates) {
-                console.log(templates);
+        $("#manage-pagetree-insert-template-button").click(function () {
+            TemplateService.getTemplateList(function (templates) {
+                // console.log(templates);
                 var template_list = $("#pagetree-template-list-inner");
                 template_list.empty();
                 for (var i = 0; i < templates.length; ++i) {
+                    var id = templates[i].id;
+                    var id_id = id.templateType == "custom" ?
+                        id.customOutlineId : id.spaceBlueprintId;
                     template_list.append(
-                        '<li data-template-name="'+templates[i].name+'" ' +
-                            'data-template-id="'+templates[i].id+'">' +
-                            '<a href="#">'+
-                                templates[i].name+
+                        '<li data-template-name="' + templates[i].name + '" ' +
+                            'data-template-id="' + id_id + '" ' +
+                            'data-template-type="' + id.templateType + '">' +
+                            '<a href="#">' +
+                                templates[i].name +
                                 span_remove +
                             '</a>' +
                         '</li>'
@@ -154,11 +185,44 @@
             $(templateAnchorElem).append(span_remove);
         });
 
+        template_list.on("click", "span.template-remove-sure", function (e) {
+            e.stopPropagation();
+            var templateElem = e.currentTarget.parentElement.parentElement;
+            TemplateService.removeTemplateById(
+                templateElem.dataset.templateId,
+                templateElem.dataset.templateType,
+                function () {
+                    $(templateElem).remove();
+                }
+            );
+        });
+
         template_list.on("click", "li", function (e) {
             var templateElem = e.currentTarget;
-            TemplateService.getTemplateById(templateElem.dataset.templateId, function (template) {
-                console.log(template);
-            });
+            var selected = tree.jstree(true).get_selected();
+            if (!selected.length) return false;
+            TemplateService.getTemplateById(
+                templateElem.dataset.templateId,
+                templateElem.dataset.templateType,
+                function (template) {
+                    insert_template(selected[0], template);
+                }
+            );
+        });
+
+        $("#template-upload-input").on('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                var fr = new FileReader();
+                fr.onload = function (e) {
+                    TemplateService.fromFile(e.target.result, function() {
+                        document.getElementById("manage-pagetree-insert-template-button").click();
+                    });
+                };
+                fr.readAsText(file);
+            }
+            this.value = null;
+            return false;
         });
 
         $("#manage-pagetree-rename-page-button").click(function () {
@@ -191,11 +255,13 @@
                 var selected = jstree.get_selected();
 
                 $("#manage-pagetree-rename-page-button")[0].disabled = !selected.every(function (e) {
-                    return jstree.get_node(e).a_attr.data_canEdit;
+                    var node = jstree.get_node(e);
+                    return node.type == "new" || node.a_attr.data_canEdit;
                 });
 
                 $("#manage-pagetree-remove-page-button")[0].disabled = !selected.every(function (e) {
-                    return jstree.get_node(e).a_attr.data_canRemove;
+                    var node = jstree.get_node(e);
+                    return node.type == "new" || node.a_attr.data_canRemove;
                 });
             });
         };
@@ -246,16 +312,15 @@
                     else
                         location.reload();
                 },
-                success: function() {
-                    eval("debugger;");
+                success: function () {
                     location.reload()
                 }
             });
         });
 
-        $("#manage-pagetree-undo-button").click(function (e) {
+        $("#manage-pagetree-undo-button").click(function () {
             var actionsContainer = $("#pagetree-undo-action-list");
-            var actions = undoActions.map(function(e) {
+            var actions = undoActions.map(function (e) {
                 switch (e.commandType) {
                     case "addPage":
                         return '<span class="aui-lozenge aui-lozenge-success">Add</span> "' + e.name + '"';
@@ -266,6 +331,9 @@
                     case "renamePage":
                         return '<span class="aui-lozenge aui-lozenge-complete">Rename</span> "' + e.oldName +
                             '" -> "' + e.newName + '"';
+                    case "insertTemplate":
+                        return '<span class="aui-lozenge aui-lozenge-success">Insert template</span> "' +
+                            e.name + '"';
                 }
             }).join("</li><li>");
 
@@ -273,9 +341,9 @@
             actionsContainer.html(actions);
         });
 
-        $(dialog + "-save-button").click(function (e) {
+        $(dialog + "-save-button").click(function () {
             var actionsContainer = $("#pagetree-action-list");
-            var actions = ManagePagetreeCommand.getCommands().map(function(e) {
+            var actions = ManagePagetreeCommand.getCommands().map(function (e) {
                 switch (e.commandType) {
                     case "addPage":
                         return '<span class="aui-lozenge aui-lozenge-success">Add</span> "' + e.name + '"';
@@ -286,6 +354,9 @@
                     case "renamePage":
                         return '<span class="aui-lozenge aui-lozenge-complete">Rename</span> "' + e.oldName +
                             '" -> "' + e.newName + '"';
+                    case "insertTemplate":
+                        return '<span class="aui-lozenge aui-lozenge-success">Insert template</span> "' +
+                            e.name + '"';
                 }
             }).join("</li><li>");
 

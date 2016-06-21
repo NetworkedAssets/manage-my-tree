@@ -12,9 +12,10 @@ import org.codehaus.jackson.annotate.JsonTypeName
 class InsertTemplate(
         val parentId: String,
         val templateId: TemplateId,
-        val newPageJstreeIds: Map<Int, String>
+        val newPageJstreeIds: Map<String, String>
 ) : Command() {
     var insertedPages: MutableList<Long> = mutableListOf()
+    var name: String? = null
 
     override fun execute(pageManager: PageManager, ec: ExecutionContext) {
         when (templateId) {
@@ -26,9 +27,10 @@ class InsertTemplate(
     private fun executeCustom(templateId: TemplateId.Custom, pageManager: PageManager, ec: ExecutionContext) {
         val template = templateId.getFromDb()
         val parent = pageManager.getPage(parentId, ec)
-        val root = template.root
+        name = template.name
 
-        plantCustom(root, parent, pageManager, ec)
+        for (outline in template.outlines)
+            plantCustom(outline, parent, pageManager, ec)
     }
 
     private fun plantCustom(outline: CustomOutline, parent: Page, pageManager: PageManager, ec: ExecutionContext) {
@@ -42,7 +44,7 @@ class InsertTemplate(
             throw PermissionException("""Cannot create page "${page.title}": insufficient permissions! """)
 
         pageManager.saveContentEntity(page, null)
-        ec[newPageJstreeIds[outline.id]!!] = page.id
+        ec[newPageJstreeIds[outline.id.toString()]!!] = page.id
         insertedPages.add(page.id)
 
         for (child in outline.children)
@@ -90,9 +92,10 @@ class InsertTemplate(
         @JvmStatic @JsonCreator fun insertTemplate(
                 @JsonProperty("parentId") parentId: String,
                 @JsonProperty("templateId") templateId: TemplateId,
-                @JsonProperty("insertedPages") insertedPages: List<Long>,
-                @JsonProperty("newPageJstreeIds") newPageJstreeIds: Map<Int, String>
+                @JsonProperty("insertedPages") insertedPages: List<Long>?,
+                @JsonProperty("newPageJstreeIds") newPageJstreeIds: Map<String, String>,
+                @JsonProperty("name") name: String?
         ) = InsertTemplate(parentId, templateId, newPageJstreeIds)
-                .apply { this.insertedPages = insertedPages.toMutableList() }
+                .apply { this.insertedPages = insertedPages?.toMutableList() ?: mutableListOf(); this.name = name }
     }
 }

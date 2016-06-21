@@ -42,7 +42,7 @@ class CommandTest {
         val inp = InsertTemplate(
                 "foo",
                 TemplateId.FromBlueprint("bar"),
-                Collections.singletonMap(2, "b"))
+                Collections.singletonMap("2", "b"))
         inp.insertedPages.add(2L)
         val inps = om.writeValueAsString(inp)
         val inpd = om.readValue(inps, Command::class.java)
@@ -51,7 +51,7 @@ class CommandTest {
         val inp2 = InsertTemplate(
                 "foo",
                 TemplateId.Custom(42),
-                Collections.singletonMap(1, "a"))
+                Collections.singletonMap("2", "a"))
         inp2.insertedPages.add(3L)
         val inps2 = om.writeValueAsString(inp2)
         val inpd2 = om.readValue(inps2, Command::class.java)
@@ -61,11 +61,12 @@ class CommandTest {
     @Test
     fun testSerializeOutline() {
         val o = CustomOutline("foo", Lists.newArrayList<CustomOutline>(), null)
-        val s = "{\"title\": \"foo\", \"children\": []}"
+        //language=JSON
+        val s = """{"title": "foo", "children": []}"""
         val customOutline = om.readValue(s, CustomOutline::class.java)
         assertEquals(customOutline, o)
 
-        val t = CustomTemplate("bar", o)
+        val t = CustomTemplate("bar", listOf(o))
         val customTemplate = om.readValue(om.writeValueAsString(t), CustomTemplate::class.java)
         assertEquals(customTemplate, t)
     }
@@ -76,4 +77,29 @@ class CommandTest {
         assertEquals(s, """{"name":"foo","id":2}""")
     }
 
+    @Test
+    fun testDeserializeInsertTemplate() {
+        //language=JSON
+        val s = """
+            {
+                "commandType": "insertTemplate",
+                "templateId": {
+                    "templateType": "custom",
+                    "customOutlineId": 1
+                },
+                "parentId": "98310",
+                "newPageJstreeIds": {
+                    "1": "j1_11",
+                    "2": "j1_12"
+                },
+                "name": "test"
+            }
+        """;
+
+        val cmds: Command = om.deserialize(s);
+    }
+
 }
+
+inline fun <reified T: Any> ObjectMapper.deserialize(s: String): T =
+        this.readValue(s, T::class.java)
