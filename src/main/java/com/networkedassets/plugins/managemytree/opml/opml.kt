@@ -25,6 +25,10 @@ data class Body(val outline: List<Outline>) {
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Outline")
-data class Outline(val outline: List<Outline>, @XmlAttribute(name = "text", required = true) val text: String) {
-    constructor(): this(arrayListOf(), "")
+data class Outline(
+        val outline: List<Outline>,
+        @XmlAttribute(name = "text", required = false) val text: String?,
+        @XmlAttribute(name = "title", required = true) val title: String
+) {
+    constructor(): this(arrayListOf(), "", "")
 }

@@ -7,6 +7,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.util.*
 
+@Suppress("UNUSED_VARIABLE")
 class CommandTest {
     private val om = ObjectMapper()
 
@@ -60,9 +61,9 @@ class CommandTest {
 
     @Test
     fun testSerializeOutline() {
-        val o = CustomOutline("foo", Lists.newArrayList<CustomOutline>(), null)
+        val o = CustomOutline("foo", "bar", Lists.newArrayList<CustomOutline>(), null)
         //language=JSON
-        val s = """{"title": "foo", "children": []}"""
+        val s = """{"title": "foo", "text": "bar", "children": []}"""
         val customOutline = om.readValue(s, CustomOutline::class.java)
         assertEquals(customOutline, o)
 
@@ -71,6 +72,7 @@ class CommandTest {
         assertEquals(customTemplate, t)
     }
 
+    @Suppress("unused")
     @Test
     fun testSerializeKotlinObjectLiterals() {
         val s = om.writeValueAsString(object { val name = "foo"; val id = 2; })

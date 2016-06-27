@@ -127,6 +127,7 @@ class TemplateService {
 
     @GET
     fun getAll(@DefaultValue("true") @QueryParam("withBody") withBody: Boolean): Response {
+        @Suppress("unused")
         val json = if (withBody) {
             customTemplateManager.getAll().asJson()
         } else {
@@ -145,6 +146,7 @@ class TemplateService {
         _instance = this
     }
 
+    @Suppress("unused")
     companion object {
         private var _instance: TemplateService by notNull()
         val instance: TemplateService
@@ -158,21 +160,28 @@ class CustomTemplateManager(val ao: ActiveObjects) {
     fun getById(id: Int) = ao.get(CustomTemplateAO::class.java, id).toCustomTemplate()
 
     fun create(template: CustomTemplate): CustomTemplate = ao.executeInTransaction {
-        val templateEntity = ao.create(CustomTemplateAO::class.java, mapOf("NAME" to template.name))
+        val templateEntity = ao.create(CustomTemplateAO::class.java,
+                mapOf("NAME" to template.name))
         templateEntity.save()
 
         for (outline in template.outlines) {
-            val rootEntity = ao.create(CustomOutlineAO::class.java, mapOf("TITLE" to outline.title, "TEMPLATE_ID" to templateEntity.id))
+            val rootEntity = ao.create(CustomOutlineAO::class.java, mapOf(
+                    "TITLE" to outline.title,
+                    "TEXT" to outline.text,
+                    "TEMPLATE_ID" to templateEntity.id))
             rootEntity.save()
             createChildren(outline, rootEntity)
         }
 
-        templateEntity.toCustomTemplate().let { println(it); it }
+        templateEntity.toCustomTemplate()//.let { println(it); it }
     }
 
     private fun createChildren(parent: CustomOutline, parentEntity: CustomOutlineAO) {
         parent.children.forEach { child ->
-            val childEntity = ao.create(CustomOutlineAO::class.java, mapOf("TITLE" to child.title, "PARENT_ID" to parentEntity.id))
+            val childEntity = ao.create(CustomOutlineAO::class.java, mapOf(
+                    "TITLE" to child.title,
+                    "TEXT" to child.text,
+                    "PARENT_ID" to parentEntity.id))
             childEntity.save()
             createChildren(child, childEntity)
         }
@@ -224,7 +233,10 @@ val CustomTemplateAO.thisAndAllOutlines: Array<Entity>
 interface CustomOutlineAO : Entity {
     @get:NotNull
     var title: String
+    @get:NotNull
+    var text: String
     var parent: CustomOutlineAO?
+    @Suppress("unused")
     var template: CustomTemplateAO?
 
     @get:OneToMany(reverse = "getParent")
@@ -259,21 +271,24 @@ fun Opml.toCustomTemplate() = CustomTemplate(
 data class CustomOutline
 @JsonCreator constructor(
         @param:JsonProperty("title") @get:JsonProperty("title") val title: String,
+        @param:JsonProperty("text") @get:JsonProperty("text") val text: String,
         @param:JsonProperty("children") @get:JsonProperty("children") val children: List<CustomOutline>,
         @param:JsonProperty("id") @get:JsonProperty("id") val id: Int?
 ) {
-    constructor(title: String, children: List<CustomOutline>) : this(title, children, null)
+    constructor(title: String, text: String, children: List<CustomOutline>) : this(title, text, children, null)
 }
 
 //region toCustomOutline conversions
 fun CustomOutlineAO.toCustomOutline(): CustomOutline = CustomOutline(
         title = this.title,
+        text = this.text,
         children = this.children.map { it.toCustomOutline() },
         id = this.id
 )
 
 fun Outline.toCustomOutline(): CustomOutline = CustomOutline(
-        title = this.text,
+        title = this.title,
+        text = this.text ?: "",
         children = this.outline.map { it.toCustomOutline() },
         id = null
 )
