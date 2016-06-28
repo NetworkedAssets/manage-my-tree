@@ -101,8 +101,9 @@
     <component-import key="ao"
                       interface="com.atlassian.activeobjects.external.ActiveObjects"/>
 
-    <!--<component-import key="contentBlueprintManager"-->
-                      <!--interface="com.atlassian.confluence.plugins.createcontent.ContentBlueprintManager"/>-->
+    <component-import key="webItemService"
+                      interface="com.atlassian.confluence.plugins.createcontent.rest.BlueprintWebItemService"/>
+
     <!--<component-import key="blueprintContentGenerator"-->
                       <!--interface="com.atlassian.confluence.plugins.createcontent.actions.BlueprintContentGenerator"/>-->
 

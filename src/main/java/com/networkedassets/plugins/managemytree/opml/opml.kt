@@ -7,26 +7,26 @@ import javax.xml.bind.annotation.XmlType
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "OPML")
-data class Opml(val head: Head, val body: Body) {
-    constructor(): this(Head(), Body())
+data class Opml(val head: OpmlHead, val body: OpmlBody) {
+    constructor(): this(OpmlHead(), OpmlBody())
 }
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Head")
-data class Head(val title: String?) {
+data class OpmlHead(val title: String?) {
     constructor(): this("")
 }
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Body")
-data class Body(val outline: List<Outline>) {
+data class OpmlBody(val outline: List<OpmlOutline>) {
     constructor(): this(arrayListOf())
 }
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Outline")
-data class Outline(
-        val outline: List<Outline>,
+data class OpmlOutline(
+        val outline: List<OpmlOutline>,
         @XmlAttribute(name = "text", required = false) val text: String?,
         @XmlAttribute(name = "title", required = true) val title: String
 ) {

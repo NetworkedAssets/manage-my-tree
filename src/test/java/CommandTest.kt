@@ -61,14 +61,14 @@ class CommandTest {
 
     @Test
     fun testSerializeOutline() {
-        val o = CustomOutline("foo", "bar", Lists.newArrayList<CustomOutline>(), null)
+        val o = Outline("foo", "bar", Lists.newArrayList<Outline>(), null)
         //language=JSON
         val s = """{"title": "foo", "text": "bar", "children": []}"""
-        val customOutline = om.readValue(s, CustomOutline::class.java)
+        val customOutline = om.readValue(s, Outline::class.java)
         assertEquals(customOutline, o)
 
-        val t = CustomTemplate("bar", listOf(o))
-        val customTemplate = om.readValue(om.writeValueAsString(t), CustomTemplate::class.java)
+        val t = Template("bar", listOf(o))
+        val customTemplate = om.readValue(om.writeValueAsString(t), Template::class.java)
         assertEquals(customTemplate, t)
     }
 

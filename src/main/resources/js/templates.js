@@ -23,6 +23,16 @@ TemplateService = (function ($, undefined){
                         eval("debugger;")
                     }
                 });
+            } else {
+                $.ajax({
+                    type: "GET",
+                    url: templatesUrl + "/blueprint/" + templateId,
+                    dataType: "json",
+                    success: callback,
+                    error: function () {
+                        eval("debugger;")
+                    }
+                });
             }
         },
         removeTemplateById: function (templateId, templateType, callback) {

@@ -1,8 +1,15 @@
 package com.networkedassets.plugins.managemytree
 
 import com.atlassian.activeobjects.external.ActiveObjects
+import com.atlassian.confluence.plugins.createcontent.extensions.ContentTemplateModuleDescriptor
+import com.atlassian.confluence.plugins.createcontent.extensions.SpaceBlueprintModuleDescriptor
+import com.atlassian.confluence.plugins.createcontent.rest.BlueprintWebItemService
+import com.atlassian.confluence.user.AuthenticatedUserThreadLocal
+import com.atlassian.confluence.util.i18n.I18NBean
+import com.atlassian.confluence.util.i18n.I18NBeanFactory
+import com.atlassian.plugin.PluginAccessor
 import com.networkedassets.plugins.managemytree.opml.Opml
-import com.networkedassets.plugins.managemytree.opml.Outline
+import com.networkedassets.plugins.managemytree.opml.OpmlOutline
 import net.java.ao.Entity
 import net.java.ao.OneToMany
 import net.java.ao.Preload
@@ -34,6 +41,11 @@ sealed class TemplateId {
     @JsonCreator constructor(
             @param:JsonProperty("spaceBlueprintId") val spaceBlueprintId: String
     ) : TemplateId() {
+        @JsonIgnore
+        fun getFromBlueprint() =
+                (TemplateService.instance.pluginManager
+                        .getPluginModule(spaceBlueprintId) as SpaceBlueprintModuleDescriptor)
+                        .toTemplate()
 
         //region equals, hashcode, toString
         override fun equals(other: Any?): Boolean {
@@ -91,14 +103,17 @@ sealed class TemplateId {
 @Path("/templates")
 @Produces("application/json")
 @Consumes("application/json")
-class TemplateService {
-    val customTemplateManager by lazy { CustomTemplateManager.instance }
-
+class TemplateService(
+        private val customTemplateManager: CustomTemplateManager,
+        val pluginManager: PluginAccessor,
+        private val webItemService: BlueprintWebItemService,
+        private val i18NBeanFactory: I18NBeanFactory
+) {
     @Context
     lateinit var uriInfo: UriInfo
 
     @POST
-    fun createTemplate(template: CustomTemplate): Response {
+    fun createCustomTemplate(template: Template): Response {
         val createdTemplate = customTemplateManager.create(template)
 
         return Response
@@ -109,17 +124,23 @@ class TemplateService {
 
     @POST
     @Consumes("application/xml")
-    fun createTemplate(opml: Opml): Response {
-        val template = opml.toCustomTemplate();
-        return createTemplate(template)
+    fun createCustomTemplate(opml: Opml): Response {
+        val template = opml.toTemplate();
+        return createCustomTemplate(template)
     }
 
     @GET @Path("{id}")
-    fun getTemplate(@PathParam("id") id: Int): Response =
+    fun getCustomTemplate(@PathParam("id") id: Int): Response =
             Response.ok().entity(customTemplateManager.getById(id).asJson()).build()
 
+    @GET @Path("blueprint/{id}")
+    fun getBlueprintTemplate(@PathParam("id") moduleKey: String): Response {
+        val sbmd = pluginManager.getPluginModule(moduleKey) as SpaceBlueprintModuleDescriptor
+        return Response.ok().entity(sbmd.toTemplate()!!.asJson()).build()
+    }
+
     @DELETE @Path("{id}")
-    fun deleteTemplate(@PathParam("id") id: Int): Response {
+    fun deleteCustomTemplate(@PathParam("id") id: Int): Response {
         customTemplateManager.remove(id);
         //language=JSON
         return Response.ok("""{"status": "ok"}""").build()
@@ -127,11 +148,14 @@ class TemplateService {
 
     @GET
     fun getAll(@DefaultValue("true") @QueryParam("withBody") withBody: Boolean): Response {
+        val customTemplates = customTemplateManager.getAll()
+        val blueprintTemplates = getAllBlueprintTemplates(headerOnly = !withBody)
+        val allTemplates = customTemplates + blueprintTemplates;
         @Suppress("unused")
         val json = if (withBody) {
-            customTemplateManager.getAll().asJson()
+            allTemplates.asJson()
         } else {
-            customTemplateManager.getAll().map {
+            allTemplates.map {
                 object {
                     val name = it.name;
                     val id = it.id
@@ -139,6 +163,22 @@ class TemplateService {
             }.asJson()
         }
         return Response.ok().entity(json).build()
+    }
+
+    @GET @Path("test")
+    fun getAllBlueprintTemplates(@DefaultValue("false") @QueryParam("headerOnly") headerOnly: Boolean = false): List<Template> {
+        return webItemService
+                .getCreateSpaceWebItems(i18NBeanFactory.i18NBean, null, AuthenticatedUserThreadLocal.get())
+                .asSequence()
+                .map {
+                    pluginManager.getPluginModule(it.blueprintModuleCompleteKey) as? SpaceBlueprintModuleDescriptor
+                }
+                .filterNotNull()
+                .map {
+                    it.toTemplate(headerOnly)
+                }
+                .filterNotNull()
+                .toList()
     }
 
     //region singleton stuff
@@ -155,11 +195,11 @@ class TemplateService {
     //endregion
 }
 
-class CustomTemplateManager(val ao: ActiveObjects) {
-    fun getAll() = ao.find(CustomTemplateAO::class.java).map { it.toCustomTemplate() }
-    fun getById(id: Int) = ao.get(CustomTemplateAO::class.java, id).toCustomTemplate()
+class CustomTemplateManager(private val ao: ActiveObjects) {
+    fun getAll() = ao.find(CustomTemplateAO::class.java).map { it.toTemplate() }
+    fun getById(id: Int) = ao.get(CustomTemplateAO::class.java, id).toTemplate()
 
-    fun create(template: CustomTemplate): CustomTemplate = ao.executeInTransaction {
+    fun create(template: Template): Template = ao.executeInTransaction {
         val templateEntity = ao.create(CustomTemplateAO::class.java,
                 mapOf("NAME" to template.name))
         templateEntity.save()
@@ -173,10 +213,10 @@ class CustomTemplateManager(val ao: ActiveObjects) {
             createChildren(outline, rootEntity)
         }
 
-        templateEntity.toCustomTemplate()//.let { println(it); it }
+        templateEntity.toTemplate()//.let { println(it); it }
     }
 
-    private fun createChildren(parent: CustomOutline, parentEntity: CustomOutlineAO) {
+    private fun createChildren(parent: Outline, parentEntity: CustomOutlineAO) {
         parent.children.forEach { child ->
             val childEntity = ao.create(CustomOutlineAO::class.java, mapOf(
                     "TITLE" to child.title,
@@ -245,52 +285,84 @@ interface CustomOutlineAO : Entity {
 //endregion
 
 //region data
-data class CustomTemplate
+data class Template
 @JsonCreator constructor(
         @param:JsonProperty("name") @get:JsonProperty("name") val name: String,
-        @param:JsonProperty("outlines") @get:JsonProperty("outlines") val outlines: List<CustomOutline>,
-        @param:JsonProperty("id") @get:JsonProperty("id") val id: TemplateId.Custom?
+        @param:JsonProperty("outlines") @get:JsonProperty("outlines") val outlines: List<Outline>,
+        @param:JsonProperty("id") @get:JsonProperty("id") val id: TemplateId?
 ) {
-    constructor(name: String, outlines: List<CustomOutline>) : this(name, outlines, null)
+    constructor(name: String, outlines: List<Outline>) : this(name, outlines, null)
 }
 
 //region toCustomTemplate conversions
-fun CustomTemplateAO.toCustomTemplate() = CustomTemplate(
+fun CustomTemplateAO.toTemplate() = Template(
         name = this.name,
-        outlines = this.outlines.map { it.toCustomOutline() },
+        outlines = this.outlines.map { it.toOutline() },
         id = TemplateId.Custom(this.id)
 )
 
-fun Opml.toCustomTemplate() = CustomTemplate(
+fun Opml.toTemplate() = Template(
         name = this.head.title ?: "template without title",
-        outlines = this.body.outline.map { it.toCustomOutline() },
+        outlines = this.body.outline.map { it.toOutline() },
         id = null
 )
+
+fun SpaceBlueprintModuleDescriptor.toTemplate(headerOnly: Boolean = false): Template? {
+    if (this.contentTemplateRefNode == null) return null
+    return Template(
+            name = tryGetI18n(this)?.getText(this.i18nNameKey) ?: this.name ?: "blankSpace",
+            outlines = if (headerOnly) listOf() else listOf(this.contentTemplateRefNode.toOutline()),
+            id = TemplateId.FromBlueprint(this.completeKey)
+    )
+}
+
+fun tryGetI18n(spaceBlueprintModuleDescriptor: SpaceBlueprintModuleDescriptor): I18NBean? {
+    val contentModuleDesc = TemplateService.instance.pluginManager
+            .getPluginModule(spaceBlueprintModuleDescriptor.contentTemplateRefNode.ref.completeKey) as ContentTemplateModuleDescriptor
+    return contentModuleDesc.javaClass.declaredFields.filter { it.type == I18NBeanFactory::class.java }.firstOrNull()?.let {
+        it.isAccessible = true
+        val i18nFact = it.get(contentModuleDesc) as I18NBeanFactory
+        i18nFact.i18NBean
+    }
+}
 //endregion
 
-data class CustomOutline
+data class Outline
 @JsonCreator constructor(
         @param:JsonProperty("title") @get:JsonProperty("title") val title: String,
         @param:JsonProperty("text") @get:JsonProperty("text") val text: String,
-        @param:JsonProperty("children") @get:JsonProperty("children") val children: List<CustomOutline>,
+        @param:JsonProperty("children") @get:JsonProperty("children") val children: List<Outline>,
         @param:JsonProperty("id") @get:JsonProperty("id") val id: Int?
 ) {
-    constructor(title: String, text: String, children: List<CustomOutline>) : this(title, text, children, null)
+    constructor(title: String, text: String, children: List<Outline>) : this(title, text, children, null)
 }
 
 //region toCustomOutline conversions
-fun CustomOutlineAO.toCustomOutline(): CustomOutline = CustomOutline(
+fun CustomOutlineAO.toOutline(): Outline = Outline(
         title = this.title,
         text = this.text,
-        children = this.children.map { it.toCustomOutline() },
+        children = this.children.map { it.toOutline() },
         id = this.id
 )
 
-fun Outline.toCustomOutline(): CustomOutline = CustomOutline(
+fun OpmlOutline.toOutline(): Outline = Outline(
         title = this.title,
         text = this.text ?: "",
-        children = this.outline.map { it.toCustomOutline() },
-        id = null
+        children = this.outline.map { it.toOutline() }
 )
+
+fun SpaceBlueprintModuleDescriptor.ContentTemplateRefNode.toOutline(): Outline {
+    val pluginModule = TemplateService.instance.pluginManager.getPluginModule(
+            this.ref.completeKey
+    ) as ContentTemplateModuleDescriptor
+
+    val pageTemplate = pluginModule.module
+    return Outline(
+            title = pageTemplate.title,
+            text = pageTemplate.content,
+            children = this.children.map { it.toOutline() },
+            id = pageTemplate.title.hashCode() // TODO: do something better here, might collide
+    )
+}
 //endregion
 //endregion

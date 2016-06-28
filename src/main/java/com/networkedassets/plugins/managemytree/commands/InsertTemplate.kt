@@ -19,21 +19,20 @@ class InsertTemplate(
 
     override fun execute(pageManager: PageManager, ec: ExecutionContext) {
         when (templateId) {
-            is TemplateId.Custom -> executeCustom(templateId, pageManager, ec)
-            is TemplateId.FromBlueprint -> executeBlueprint(pageManager, ec)
+            is TemplateId.Custom -> executeTemplate(templateId.getFromDb(), pageManager, ec)
+            is TemplateId.FromBlueprint -> executeTemplate(templateId.getFromBlueprint()!!, pageManager, ec)
         }
     }
 
-    private fun executeCustom(templateId: TemplateId.Custom, pageManager: PageManager, ec: ExecutionContext) {
-        val template = templateId.getFromDb()
+    private fun executeTemplate(template: Template, pageManager: PageManager, ec: ExecutionContext) {
         val parent = pageManager.getPage(parentId, ec)
         name = template.name
 
         for (outline in template.outlines)
-            plantCustom(outline, parent, pageManager, ec)
+            plantOutline(outline, parent, pageManager, ec)
     }
 
-    private fun plantCustom(outline: CustomOutline, parent: Page, pageManager: PageManager, ec: ExecutionContext) {
+    private fun plantOutline(outline: Outline, parent: Page, pageManager: PageManager, ec: ExecutionContext) {
         val page = Page()
         page.title = outline.title
         page.bodyAsString = outline.text;
@@ -49,13 +48,7 @@ class InsertTemplate(
         insertedPages.add(page.id)
 
         for (child in outline.children)
-            plantCustom(child, page, pageManager, ec)
-    }
-
-
-    @Suppress("UNUSED_PARAMETER")
-    private fun executeBlueprint(pageManager: PageManager, ec: ExecutionContext) {
-        throw UnsupportedOperationException("not implemented")
+            plantOutline(child, page, pageManager, ec)
     }
 
     override fun revert(pageManager: PageManager) {

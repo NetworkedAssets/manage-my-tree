@@ -150,21 +150,33 @@
             TemplateService.getTemplateList(function (templates) {
                 // console.log(templates);
                 var template_list = $("#pagetree-template-list-inner");
+                var blueprint_template_list = $("#pagetree-template-list-blueprint-inner");
                 template_list.empty();
+                blueprint_template_list.empty();
                 for (var i = 0; i < templates.length; ++i) {
                     var id = templates[i].id;
-                    var id_id = id.templateType == "custom" ?
-                        id.customOutlineId : id.spaceBlueprintId;
-                    template_list.append(
-                        '<li data-template-name="' + templates[i].name + '" ' +
-                            'data-template-id="' + id_id + '" ' +
-                            'data-template-type="' + id.templateType + '">' +
-                            '<a href="#">' +
-                                templates[i].name +
-                                span_remove +
-                            '</a>' +
-                        '</li>'
-                    );
+                    if (id.templateType == "custom") {
+                        template_list.append(
+                            '<li data-template-name="' + templates[i].name + '" ' +
+                                'data-template-id="' + id.customOutlineId + '" ' +
+                                'data-template-type="' + id.templateType + '">' +
+                                '<a href="#">' +
+                                    templates[i].name +
+                                    span_remove +
+                                '</a>' +
+                            '</li>'
+                        );
+                    } else { // fromBlueprint
+                        blueprint_template_list.append(
+                            '<li data-template-name="' + templates[i].name + '" ' +
+                                'data-template-id="' + id.spaceBlueprintId + '" ' +
+                                'data-template-type="' + id.templateType + '">' +
+                                '<a href="#">' +
+                                    templates[i].name +
+                                '</a>' +
+                            '</li>'
+                        );
+                    }
                 }
             });
         });
@@ -197,7 +209,9 @@
             );
         });
 
-        template_list.on("click", "li", function (e) {
+        var all_templates = $("#pagetree-template-list-inner,#pagetree-template-list-blueprint-inner");
+
+        all_templates.on("click", "li", function (e) {
             var templateElem = e.currentTarget;
             var selected = tree.jstree(true).get_selected();
             if (!selected.length) return false;

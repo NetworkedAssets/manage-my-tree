@@ -29,12 +29,6 @@ class PageTreeService(
         private val spaceManager: SpaceManager,
         private val pluginSettingsFactory: PluginSettingsFactory
 ) {
-//    val spaceBlueprintManager by lazy {
-//        ContainerManager.getComponent("spaceBlueprintManager", SpaceBlueprintManager::class.java)
-//    }
-//    val blueprintContentGenerator by lazy {
-//        ContainerManager.getComponent("blueprintContentGenerator", BlueprintContentGenerator::class.java)
-//    }
 
     @POST
     @Path("manage")
