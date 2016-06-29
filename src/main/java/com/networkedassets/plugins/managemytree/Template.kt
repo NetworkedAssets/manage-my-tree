@@ -27,6 +27,12 @@ private val OBJECT_MAPPER = ObjectMapper()
 
 fun Any.asJson() = OBJECT_MAPPER.writeValueAsString(this)
 
+val IGNORED_MODULES: List<String> = listOf(
+        "com.atlassian.confluence.plugins.confluence-space-blueprints:documentation-space-blueprint",
+        "com.atlassian.confluence.plugins.confluence-knowledge-base:kb-blueprint",
+        "com.atlassian.confluence.plugins.confluence-space-blueprints:team-space-blueprint"
+)
+
 //region json stuff
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "templateType")
 @JsonSubTypes(
@@ -165,13 +171,15 @@ class TemplateService(
         return Response.ok().entity(json).build()
     }
 
-    @GET @Path("test")
-    fun getAllBlueprintTemplates(@DefaultValue("false") @QueryParam("headerOnly") headerOnly: Boolean = false): List<Template> {
+    fun getAllBlueprintTemplates(headerOnly: Boolean = false): List<Template> {
         return webItemService
                 .getCreateSpaceWebItems(i18NBeanFactory.i18NBean, null, AuthenticatedUserThreadLocal.get())
                 .asSequence()
                 .map {
-                    pluginManager.getPluginModule(it.blueprintModuleCompleteKey) as? SpaceBlueprintModuleDescriptor
+                    if (it.blueprintModuleCompleteKey in IGNORED_MODULES)
+                        null
+                    else
+                        pluginManager.getPluginModule(it.blueprintModuleCompleteKey) as? SpaceBlueprintModuleDescriptor
                 }
                 .filterNotNull()
                 .map {
