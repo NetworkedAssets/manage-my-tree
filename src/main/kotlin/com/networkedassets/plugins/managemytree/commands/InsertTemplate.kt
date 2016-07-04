@@ -35,7 +35,7 @@ class InsertTemplate(
     private fun plantOutline(outline: Outline, parent: Page, pageManager: PageManager, ec: ExecutionContext) {
         val page = Page()
         page.title = outline.title
-        page.bodyAsString = outline.text;
+        page.bodyAsString = outline.text
         page.space = parent.space
         parent.addChild(page)
         page.version = 1

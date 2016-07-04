@@ -18,13 +18,14 @@
     <description>The "Manage My Tree" plugin allows for easy pagetree management. The plugin allows for bulk adding, removing, and renaming pages.</description>
     <packaging>atlassian-plugin</packaging>
 
+    <repositories>
+        <repository>
+            <id>jebrains-all</id>
+            <url>http://repository.jetbrains.com/all</url>
+        </repository>
+    </repositories>
+
     <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>com.atlassian.confluence</groupId>
             <artifactId>confluence</artifactId>
@@ -56,15 +57,50 @@
             <version>${plugin.testrunner.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>jsr311-api</artifactId>
             <version>1.1.1</version>
             <scope>provided</scope>
         </dependency>
+
+        <!-- test stuff -->
+        <dependency>
+            <groupId>org.amshove.kluent</groupId>
+            <artifactId>kluent</artifactId>
+            <version>1.5-NEWMOCKITO</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.spek</groupId>
+            <artifactId>spek</artifactId>
+            <version>[1.0,)</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-reflect</artifactId>
+            <version>${kotlin.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.nhaarman</groupId>
+            <artifactId>mockito-kotlin</artifactId>
+            <version>0.5.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
+        <sourceDirectory>src/main/kotlin</sourceDirectory>
+        <testSourceDirectory>src/test/kotlin</testSourceDirectory>
         <plugins>
             <plugin>
                 <groupId>com.atlassian.maven.plugins</groupId>
@@ -76,7 +112,6 @@
                     <productDataVersion>${confluence.data.version}</productDataVersion>
                     <instructions>
                         <Export-Package>com.networkedassets.plugins.managemytree</Export-Package>
-                        <!--<Import-Package>com.atlassian.confluence.plugins.createcontent*;version="0.0"</Import-Package>-->
                     </instructions>
                 </configuration>
             </plugin>
@@ -110,7 +145,7 @@
     </build>
 
     <properties>
-        <kotlin.version>1.0.1-2</kotlin.version>
+        <kotlin.version>1.0.3</kotlin.version>
         <confluence.version>5.8.6</confluence.version>
         <confluence.data.version>5.8.6</confluence.data.version>
         <amps.version>5.0.13</amps.version>

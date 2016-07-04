@@ -131,7 +131,7 @@ class TemplateService(
     @POST
     @Consumes("application/xml")
     fun createCustomTemplate(opml: Opml): Response {
-        val template = opml.toTemplate();
+        val template = opml.toTemplate()
         return createCustomTemplate(template)
     }
 
@@ -147,7 +147,7 @@ class TemplateService(
 
     @DELETE @Path("{id}")
     fun deleteCustomTemplate(@PathParam("id") id: Int): Response {
-        customTemplateManager.remove(id);
+        customTemplateManager.remove(id)
         //language=JSON
         return Response.ok("""{"status": "ok"}""").build()
     }
@@ -156,14 +156,14 @@ class TemplateService(
     fun getAll(@DefaultValue("true") @QueryParam("withBody") withBody: Boolean): Response {
         val customTemplates = customTemplateManager.getAll()
         val blueprintTemplates = getAllBlueprintTemplates(headerOnly = !withBody)
-        val allTemplates = customTemplates + blueprintTemplates;
+        val allTemplates = customTemplates + blueprintTemplates
         @Suppress("unused")
         val json = if (withBody) {
             allTemplates.asJson()
         } else {
             allTemplates.map {
                 object {
-                    val name = it.name;
+                    val name = it.name
                     val id = it.id
                 }
             }.asJson()
@@ -267,7 +267,7 @@ val CustomTemplateAO.thisAndAllOutlines: Array<Entity>
     get() {
         val entities = ArrayList<Entity>(127)
         fun addSelfAndDescendants(o: CustomOutlineAO) {
-            entities += o;
+            entities += o
             o.children.forEach(::addSelfAndDescendants)
         }
 

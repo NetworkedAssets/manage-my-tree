@@ -29,13 +29,12 @@ class PageTreeService(
         private val spaceManager: SpaceManager,
         private val pluginSettingsFactory: PluginSettingsFactory
 ) {
-
     @POST
     @Path("manage")
     @Produces("application/json")
     @Consumes("application/json")
     fun managePages(@QueryParam("space") space: String, managePagesCommand: List<Command>?): Response {
-        val s = spaceManager.getSpace(space)
+        val s = spaceManager.getSpace(space) ?: return error("Space $space not found}")
 
         if (isUnauthorized(s)) return error("Unauthorized")
         if (managePagesCommand == null) return error("Did not get the modification commands")
@@ -73,7 +72,7 @@ class PageTreeService(
     @Consumes("application/json")
     fun revertLastChange(@QueryParam("space") spaceKey: String): Response {
         try {
-            val s = spaceManager.getSpace(spaceKey)
+            val s = spaceManager.getSpace(spaceKey) ?: return error("Space $spaceKey not found")
             val lastChanges = getLastChanges(s) ?: return error("No last changes")
             if (AuthenticatedUserThreadLocal.get().key.stringValue != lastChanges.userKey)
                 return error("Unauthorized")
@@ -110,9 +109,8 @@ class PageTreeService(
     @Path("pagetree")
     @Produces("application/json")
     fun getPageTree(@QueryParam("space") spaceKey: String, @QueryParam("rootPageId") rootId: Long?): Response {
-//        println("YO!!!!!")
         try {
-            val space = spaceManager.getSpace(spaceKey)
+            val space = spaceManager.getSpace(spaceKey) ?: return error("Space $spaceKey not found")
             if (isUnauthorized(space)) return error("Unauthorized")
 
             val page = pageFromSpaceOrHomepage(rootId, space)
@@ -129,7 +127,8 @@ class PageTreeService(
                     JsonPage.from(
                             page,
                             AuthenticatedUserThreadLocal.get(),
-                            permissionManager),
+                            permissionManager,
+                            isRoot = true),
                     lastCommands)
 
             return Response.ok(OBJECT_MAPPER.writeValueAsString(pageTreeInfo)).build()
@@ -170,5 +169,5 @@ data class JsonMessage
 )
 
 fun error(message: String) = Response.status(500).entity(JsonMessage(500, message)).build()
-fun error(exception: Exception) = error(exception.message ?: "")
+fun error(exception: Exception) = error(exception.let { it.printStackTrace(); it.message } ?: "")
 fun success(message: String) = Response.ok(JsonMessage(200, message)).build()

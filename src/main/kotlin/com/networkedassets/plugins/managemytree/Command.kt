@@ -15,18 +15,9 @@ import java.util.*
 /**
  * Used to store mappings from jstree ids to page ids needed in single command list execution
  */
-// for people not familiar with Kotlin:
-//  "constructor(...)" after the class name is the default constructor
-//  "constructor" keyword is optional, unless you want to use annotations on constructor
-//  "val" and "var" in constructor params mean that the class has a property (field + getter + (if var) setter) that has the same name
-//  "@JvmOverloads" allows you to use default parameters in other languages (i.e. Java)
-//  ":" means "implements"/"extends" from Java
-//  "by m" generates implementations for all the methods in the interface/class that delegate to m
 class ExecutionContext
 @JvmOverloads constructor(
         val permissionManager: PermissionManager,
-//        val spaceBlueprintManager: SpaceBlueprintManager,
-//        val blueprintContentGenerator: BlueprintContentGenerator,
         val space: Space,
         val idMapping: MutableMap<String, Long> = HashMap())
 : MutableMap<String, Long> by idMapping {
@@ -90,7 +81,7 @@ fun PageManager.setPagePosition(page: Page, newPosition: Int?) {
 
 val Page.truePosition: Int
     get() {
-        val i = this.parent.sortedChildren.indexOf(this)
+        val i = this.parent?.sortedChildren?.indexOf(this) ?: 0
         if (i != -1) return i
         throw IllegalArgumentException("Page is not in its parent's children list")
     }
