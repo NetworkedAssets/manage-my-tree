@@ -6,7 +6,7 @@
 */
 {template .addPageTreeDialog}
 <!-- Render the dialog -->
-<section role="dialog" id="add-page-tree-dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
+<section role="dialog" id="add-page-tree-dialog" class="aui-layer aui-dialog2 aui-dialog2-xlarge" aria-hidden="true">
     <!-- Dialog header -->
     <header class="aui-dialog2-header">
         <!-- The dialog's title -->
@@ -76,8 +76,12 @@
     </form>
     <!-- Main dialog content -->
     <div class="pagetree-containter aui-dialog2-content">
-
-        <div id="page-tree">
+        <div id="page-tree"></div>
+        <div id="template-page-tree-container">
+                <h3 id="template-name">TEST
+                <span id="template-page-tree-close" class="aui-icon aui-icon-small aui-iconfont-close-dialog"
+                      style="float: right; top: 7px;"></span></h3>
+            <div id="template-page-tree"></div>
         </div>
     </div>
     <!-- Dialog footer -->

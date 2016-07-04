@@ -13,3 +13,49 @@ button.add-node-btn, button.rem-node-btn {
 .pagetree-containter.aui-dialog2-content {
     padding-top: 0;
 }
+
+.pagetree-containter.aui-dialog2-content.pagetree-half {
+    height: 100%;
+}
+
+.pagetree-half>div {
+    width: 50%;
+    float: left;
+    height: 100%;
+}
+
+#template-name {
+    position: fixed;
+    display: block;
+    background-color: white;
+    padding: 10px;
+}
+
+#template-name span {
+    margin-left: 366px;
+}
+
+.pagetree-half #page-tree {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    overflow: auto;
+    height: 100%;
+}
+
+.pagetree-half #template-page-tree {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    overflow: auto;
+    padding-top: 50px;
+    max-height: 100%;
+    min-height: 100px;
+}
+
+.pagetree-half div#page-tree {
+    padding-right: 5px;
+}
+.pagetree-half div#template-page-tree {
+    padding-left: 5px;
+}

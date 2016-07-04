@@ -1,6 +1,7 @@
 (function ($, undefined) {
     var dialog = "#add-page-tree-dialog";
     var tree = null;
+    var template_tree = null;
     var can_create = true;
     var undoActions = null;
 
@@ -35,6 +36,9 @@
                 },
                 "new": {
                     "icon": "icon-page-added"
+                },
+                "template": {
+                    "icon": "icon-page-template"
                 }
             },
             "dnd": {
@@ -46,10 +50,46 @@
             }
         });
 
+        init_template_tree({
+            text: "test",
+            type: "template"
+        });
+
         if (!can_create)
             $("#manage-pagetree-create-page-button").hide();
 
         AJS.dialog2(dialog).show();
+    }
+
+    function init_template_tree(data) {
+        template_tree.jstree({
+            "core": {
+                "data": data,
+                "check_callback": function (operation, node, node_parent, node_position, more) {
+                    if (operation === "move_node") {
+                        return node.type === "template";
+                    }
+                    return true;
+                },
+                "dblclick_toggle": false,
+                "themes": {
+                    "stripes": true
+                }
+            },
+            "plugins": [
+                "dnd", "search", "state", "types"
+            ],
+            "types": {
+                "template": {
+                    "icon": "icon-page-template"
+                }
+            },
+            "dnd": {
+                "is_draggable": function (nodes) {
+                    return true;
+                }
+            }
+        });
     }
 
     function create_page(parent_id) {
@@ -88,7 +128,7 @@
     function insert_tree(jstree, parent_id, tree, jstree_ids) {
         var child = jstree.create_node(parent_id, {
             text: tree.title,
-            type: "new"
+            type: "template"
         });
         jstree_ids[tree.id] = child;
         for (var i = 0; i < tree.children.length; ++i) {
@@ -120,8 +160,53 @@
         ManagePagetreeCommand.removePage(page_id, pageName);
     }
 
+    function dialog_size(size) {
+        var dialog = $("#add-page-tree-dialog");
+        var classes = dialog.attr("class").split(/\s+/);
+        var dialog_size_class;
+        for (var i = 0; i < classes.length; ++i) {
+            if (classes[i].indexOf("aui-dialog2-") != -1) {
+                dialog_size_class = classes[i];
+            }
+        }
+        dialog.removeClass(dialog_size_class).addClass("aui-dialog2-" + size);
+    }
+
+    function hide_template_tree() {
+        template_tree.parent().hide();
+        tree.parent().removeClass('pagetree-half');
+        dialog_size('medium');
+    }
+
+    function show_template_tree() {
+        template_tree.parent().show();
+        tree.parent().addClass('pagetree-half');
+        dialog_size('xlarge');
+    }
+
+    function command_list_to_html(actions) {
+        return actions.map(function (e) {
+            switch (e.commandType) {
+                case "addPage":
+                    return '<span class="aui-lozenge aui-lozenge-success">Add</span> "' + e.name + '"';
+                case "removePage":
+                    return '<span class="aui-lozenge aui-lozenge-error">Remove</span> "' + e.name + '"';
+                case "movePage":
+                    return '<span class="aui-lozenge aui-lozenge-current">Move</span> "' + e.name + '"';
+                case "renamePage":
+                    return '<span class="aui-lozenge aui-lozenge-complete">Rename</span> "' + e.oldName +
+                        '" -> "' + e.newName + '"';
+                case "insertTemplate":
+                    return '<span class="aui-lozenge aui-lozenge-success">Insert template</span> "' +
+                        e.name + '"';
+            }
+        }).join("</li><li>");
+    }
+
     AJS.toInit(function () {
         tree = $("#page-tree");
+        template_tree = $("#template-page-tree");
+        hide_template_tree();
 
         var search_debounce = false;
         var search_f = function () {
@@ -213,13 +298,19 @@
 
         all_templates.on("click", "li", function (e) {
             var templateElem = e.currentTarget;
-            var selected = tree.jstree(true).get_selected();
-            if (!selected.length) return false;
             TemplateService.getTemplateById(
                 templateElem.dataset.templateId,
                 templateElem.dataset.templateType,
                 function (template) {
-                    insert_template(selected[0], template);
+                    show_template_tree();
+                    template_tree.jstree(true).destroy();
+                    init_template_tree(null);
+                    var jstree = template_tree.jstree(true);
+
+                    for (var i = 0; i < template.outlines.length; ++i) {
+                        insert_tree(jstree, "#", template.outlines[i], {});
+                    }
+                    jstree.open_node("#");
                 }
             );
         });
@@ -304,7 +395,9 @@
         });
 
         AJS.dialog2(dialog).on("hide", function () {
+            hide_template_tree();
             tree.jstree(true).destroy();
+            template_tree.jstree(true).destroy();
             ManagePagetreeCommand.clearCommands();
             set_jstree_event_listeners();
         });
@@ -334,22 +427,7 @@
 
         $("#manage-pagetree-undo-button").click(function () {
             var actionsContainer = $("#pagetree-undo-action-list");
-            var actions = undoActions.map(function (e) {
-                switch (e.commandType) {
-                    case "addPage":
-                        return '<span class="aui-lozenge aui-lozenge-success">Add</span> "' + e.name + '"';
-                    case "removePage":
-                        return '<span class="aui-lozenge aui-lozenge-error">Remove</span> "' + e.name + '"';
-                    case "movePage":
-                        return '<span class="aui-lozenge aui-lozenge-current">Move</span> "' + e.name + '"';
-                    case "renamePage":
-                        return '<span class="aui-lozenge aui-lozenge-complete">Rename</span> "' + e.oldName +
-                            '" -> "' + e.newName + '"';
-                    case "insertTemplate":
-                        return '<span class="aui-lozenge aui-lozenge-success">Insert template</span> "' +
-                            e.name + '"';
-                }
-            }).join("</li><li>");
+            var actions = command_list_to_html(undoActions);
 
             if (actions != "") actions = "<li>" + actions + "</li>";
             actionsContainer.html(actions);
@@ -357,22 +435,7 @@
 
         $(dialog + "-save-button").click(function () {
             var actionsContainer = $("#pagetree-action-list");
-            var actions = ManagePagetreeCommand.getCommands().map(function (e) {
-                switch (e.commandType) {
-                    case "addPage":
-                        return '<span class="aui-lozenge aui-lozenge-success">Add</span> "' + e.name + '"';
-                    case "removePage":
-                        return '<span class="aui-lozenge aui-lozenge-error">Remove</span> "' + e.name + '"';
-                    case "movePage":
-                        return '<span class="aui-lozenge aui-lozenge-current">Move</span> "' + e.name + '"';
-                    case "renamePage":
-                        return '<span class="aui-lozenge aui-lozenge-complete">Rename</span> "' + e.oldName +
-                            '" -> "' + e.newName + '"';
-                    case "insertTemplate":
-                        return '<span class="aui-lozenge aui-lozenge-success">Insert template</span> "' +
-                            e.name + '"';
-                }
-            }).join("</li><li>");
+            var actions = command_list_to_html(ManagePagetreeCommand.getCommands());
 
             if (actions != "") actions = "<li>" + actions + "</li>";
             actionsContainer.html(actions);
