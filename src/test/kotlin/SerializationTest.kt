@@ -8,11 +8,10 @@ import org.junit.Test
 import java.util.*
 
 @Suppress("UNUSED_VARIABLE")
-class CommandTest {
+class SerializationTest {
     private val om = ObjectMapper()
 
-    @Test
-    fun testSerializeCommand() {
+    @Test fun testSerializeCommand() {
         val ap = AddPage("a", "j1", "2")
         ap.confluenceId = 2L
         val aps = om.writeValueAsString(ap)
@@ -59,8 +58,7 @@ class CommandTest {
         assertEquals(inp2, inpd2)
     }
 
-    @Test
-    fun testSerializeOutline() {
+    @Test fun testSerializeOutline() {
         val o = Outline("foo", "bar", Lists.newArrayList<Outline>(), null)
         //language=JSON
         val s = """{"title": "foo", "text": "bar", "children": []}"""
@@ -73,14 +71,12 @@ class CommandTest {
     }
 
     @Suppress("unused")
-    @Test
-    fun testSerializeKotlinObjectLiterals() {
+    @Test fun testSerializeKotlinObjectLiterals() {
         val s = om.writeValueAsString(object { val name = "foo"; val id = 2; })
         assertEquals(s, """{"name":"foo","id":2}""")
     }
 
-    @Test
-    fun testDeserializeInsertTemplate() {
+    @Test fun testDeserializeInsertTemplate() {
         //language=JSON
         val s = """
             {
@@ -96,12 +92,9 @@ class CommandTest {
                 },
                 "name": "test"
             }
-        """;
+        """
 
-        val cmds: Command = om.deserialize(s);
+        val cmds: Command = om.readValue(s, Command::class.java)
     }
 
 }
-
-inline fun <reified T: Any> ObjectMapper.deserialize(s: String): T =
-        this.readValue(s, T::class.java)
