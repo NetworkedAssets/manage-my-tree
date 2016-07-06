@@ -66,10 +66,7 @@
             "core": {
                 "data": data,
                 "check_callback": function (operation, node) {
-                    if (operation === "move_node") {
-                        return node.type === "template";
-                    }
-                    return true;
+                    return operation !== "move_node";
                 },
                 "dblclick_toggle": false,
                 "themes": {
@@ -86,8 +83,12 @@
             },
             "dnd": {
                 "is_draggable": function (nodes) {
+                    for (var i = 0; i < nodes.length; ++i) {
+                        if (nodes[i].state.disabled) return false;
+                    }
                     return true;
-                }
+                },
+                "always_copy": true
             }
         });
     }
@@ -128,8 +129,14 @@
             template_name_parent.dataset.templateType,
             template_name_parent.dataset.templateId
         );
+        var to_remove = [];
 
         function insert_template_node(original_node, new_node, template_tree, page_tree, position, name) {
+            if (original_node.state.disabled) {
+                to_remove.push(new_node);
+                return;
+            }
+            move_data.old_instance.disable_node(original_node);
             ManagePagetreeCommand.insertTemplatePart(
                 name,
                 new_node.parent,
@@ -155,8 +162,10 @@
             move_data.position,
             move_data.node.text
         );
-        
-        // ManagePagetreeCommand.insertTemplatePart()
+
+        for (var i = 0; i < to_remove.length; ++i) {
+            move_data.new_instance.delete_node(to_remove[i]);
+        }
     }
 
     function rename_page(page_id) {
@@ -182,15 +191,24 @@
         ManagePagetreeCommand.removePage(page_id, pageName);
     }
 
-    function insert_tree(jstree, parent_id, tree, jstree_ids) {
+    function insert_tree(jstree, parent_id, outline, jstree_ids, pages) {
+        if (!pages) pages = get_all_pages_and_names();
+        var indexInPagesList = pages.names.indexOf(outline.title);
+        var disabled = indexInPagesList != -1;
+        if (disabled) {
+            tree.jstree(true).set_type(pages.pages[indexInPagesList], 'template');
+        }
         var child = jstree.create_node(parent_id, {
-            text: tree.title,
-            id: tree.id.partId,
-            type: "template"
+            text: outline.title,
+            id: outline.id.partId,
+            type: "template",
+            state: {
+                disabled: disabled
+            }
         });
-        jstree_ids[tree.id] = child;
-        for (var i = 0; i < tree.children.length; ++i) {
-            insert_tree(jstree, child, tree.children[i], jstree_ids);
+        jstree_ids[outline.id] = child;
+        for (var i = 0; i < outline.children.length; ++i) {
+            insert_tree(jstree, child, outline.children[i], jstree_ids, pages);
         }
         jstree.open_node(child);
     }
@@ -207,10 +225,20 @@
         dialog.removeClass(dialog_size_class).addClass("aui-dialog2-" + size);
     }
 
-    function hide_template_tree() {
+    function hide_template_tree(first) {
         template_tree.parent().hide();
         tree.parent().removeClass('pagetree-half');
         dialog_size('medium');
+        if (!first) {
+            var jstree = tree.jstree(true);
+            var children = get_all_pages_and_names().pages;
+            for (var i = 0; i < children.length; ++i) {
+                if (children[i].type === 'template') {
+                    if (children[i].id.indexOf('j') == 0) jstree.set_type(children[i], 'new');
+                    else jstree.set_type(children[i], 'default')
+                }
+            }
+        }
     }
 
     function show_template_tree(name, templateId, templateType) {
@@ -246,10 +274,23 @@
         }).join("</li><li>");
     }
 
+    function get_all_pages_and_names() {
+        var page_tree = tree.jstree(true);
+        var all_children = page_tree.get_node("#").children_d.map(function (el) {
+            return page_tree.get_node(el);
+        });
+        return {
+            pages: all_children,
+            names: all_children.map(function (el) {
+                return el.text;
+            })
+        }
+    }
+
     AJS.toInit(function () {
         tree = $("#page-tree");
         template_tree = $("#template-page-tree");
-        hide_template_tree();
+        hide_template_tree(true);
 
         var search_debounce = false;
         var search_f = function () {
@@ -401,12 +442,12 @@
                     );
                     template_tree.jstree(true).destroy();
                     init_template_tree(null);
-                    var jstree = template_tree.jstree(true);
+                    var template_jstree = template_tree.jstree(true);
 
                     for (var i = 0; i < template.outlines.length; ++i) {
-                        insert_tree(jstree, "#", template.outlines[i], {});
+                        insert_tree(template_jstree, "#", template.outlines[i], {});
                     }
-                    jstree.open_node("#");
+                    template_jstree.open_node("#");
                 }
             );
         });

@@ -30,6 +30,7 @@ button.add-node-btn, button.rem-node-btn {
     background-color: white;
     padding: 10px;
     width: 433px;
+    z-index: 1;
 }
 
 #template-page-tree-close {
