@@ -65,7 +65,7 @@
         template_tree.jstree({
             "core": {
                 "data": data,
-                "check_callback": function (operation, node, node_parent, node_position, more) {
+                "check_callback": function (operation, node) {
                     if (operation === "move_node") {
                         return node.type === "template";
                     }
@@ -108,33 +108,55 @@
         }
     }
 
-    function insert_template(parent_id, template) {
-        var jstree = tree.jstree(true);
-
-        if (!can_create) return false;
-
-        console.log(template);
-        var jstree_ids = {};
-        for (var i = 0; i < template.outlines.length; ++i) {
-            insert_tree(jstree, parent_id, template.outlines[i], jstree_ids);
+    function full_template_id(templateType, templateId) {
+        if (templateType == "custom") {
+            return {
+                templateType: "custom",
+                customOutlineId: templateId
+            }
+        } else {
+            return {
+                templateType: "fromBlueprint",
+                spaceBlueprintId: templateId
+            }
         }
-        jstree.open_node(parent_id);
-
-        ManagePagetreeCommand.insertTemplate(template.id, parent_id, jstree_ids, template.name);
-
-        console.log(JSON.stringify(ManagePagetreeCommand.getCommands()));
     }
 
-    function insert_tree(jstree, parent_id, tree, jstree_ids) {
-        var child = jstree.create_node(parent_id, {
-            text: tree.title,
-            type: "template"
-        });
-        jstree_ids[tree.id] = child;
-        for (var i = 0; i < tree.children.length; ++i) {
-            insert_tree(jstree, child, tree.children[i], jstree_ids);
+    function insert_template_part(move_data) {
+        var template_name_parent = document.getElementById("template-name-parent");
+        var template_type_and_id = full_template_id(
+            template_name_parent.dataset.templateType,
+            template_name_parent.dataset.templateId
+        );
+
+        function insert_template_node(original_node, new_node, template_tree, page_tree, position, name) {
+            ManagePagetreeCommand.insertTemplatePart(
+                name,
+                new_node.parent,
+                {
+                    partId: original_node.id,
+                    templateId: template_type_and_id
+                },
+                new_node.id,
+                position
+            );
+            for (var i = 0; i < original_node.children.length; ++i) {
+                var original_child = template_tree.get_node(original_node.children[i]);
+                var new_child = page_tree.get_node(new_node.children[i]);
+                insert_template_node(original_child, new_child, template_tree, page_tree);
+            }
         }
-        jstree.open_node(child);
+
+        insert_template_node(
+            move_data.original,
+            move_data.node,
+            move_data.old_instance,
+            move_data.new_instance,
+            move_data.position,
+            move_data.node.text
+        );
+        
+        // ManagePagetreeCommand.insertTemplatePart()
     }
 
     function rename_page(page_id) {
@@ -160,6 +182,19 @@
         ManagePagetreeCommand.removePage(page_id, pageName);
     }
 
+    function insert_tree(jstree, parent_id, tree, jstree_ids) {
+        var child = jstree.create_node(parent_id, {
+            text: tree.title,
+            id: tree.id.partId,
+            type: "template"
+        });
+        jstree_ids[tree.id] = child;
+        for (var i = 0; i < tree.children.length; ++i) {
+            insert_tree(jstree, child, tree.children[i], jstree_ids);
+        }
+        jstree.open_node(child);
+    }
+
     function dialog_size(size) {
         var dialog = $("#add-page-tree-dialog");
         var classes = dialog.attr("class").split(/\s+/);
@@ -178,7 +213,11 @@
         dialog_size('medium');
     }
 
-    function show_template_tree() {
+    function show_template_tree(name, templateId, templateType) {
+        var template_name_parent = document.getElementById("template-name-parent");
+        template_name_parent.dataset.templateId = templateId;
+        template_name_parent.dataset.templateType = templateType;
+        $("#template-name").text(name);
         template_tree.parent().show();
         tree.parent().addClass('pagetree-half');
         dialog_size('xlarge');
@@ -196,10 +235,14 @@
                 case "renamePage":
                     return '<span class="aui-lozenge aui-lozenge-complete">Rename</span> "' + e.oldName +
                         '" -> "' + e.newName + '"';
-                case "insertTemplate":
-                    return '<span class="aui-lozenge aui-lozenge-success">Insert template</span> "' +
-                        e.name + '"';
+                case "insertTemplatePart":
+                    if (e.name)
+                        return '<span class="aui-lozenge aui-lozenge-success">Insert template</span> "' +
+                            e.name + '"';
+                    else return null;
             }
+        }).filter(function (el) {
+            return el != null;
         }).join("</li><li>");
     }
 
@@ -226,6 +269,56 @@
             create_page(selected[0]);
         });
 
+
+        $("#manage-pagetree-rename-page-button").click(function () {
+            var selected = tree.jstree(true).get_selected();
+            if (!selected.length) return false;
+            rename_page(selected[0]);
+        });
+
+        tree.on('dblclick', 'a.jstree-anchor', function (e) {
+            var page_id = $(e.target).parent().attr("id");
+            rename_page(page_id);
+        });
+
+        $("#manage-pagetree-remove-page-button").click(function () {
+            var selected = tree.jstree(true).get_selected();
+            if (!selected.length) return false;
+            for (var i = 0; i < selected.length; ++i) {
+                remove_page(selected[i]);
+            }
+        });
+
+        var set_jstree_event_listeners = function () {
+            tree.on('move_node.jstree', function (e, data) {
+                var parentName = tree.jstree(true).get_node(data.parent).text;
+                ManagePagetreeCommand.movePage(data.node.id, data.parent, data.position, data.node.text, parentName);
+            });
+
+            tree.on('copy_node.jstree', function (e, data) {
+                if (data.node.type === "template") {
+                    insert_template_part(data);
+                }
+            });
+
+            tree.on("changed.jstree", function () {
+                var jstree = tree.jstree(true);
+                var selected = jstree.get_selected();
+
+                $("#manage-pagetree-rename-page-button")[0].disabled = !selected.every(function (e) {
+                    var node = jstree.get_node(e);
+                    return node.type == "new" || node.a_attr.data_canEdit;
+                });
+
+                $("#manage-pagetree-remove-page-button")[0].disabled = !selected.every(function (e) {
+                    var node = jstree.get_node(e);
+                    return node.type == "new" || node.a_attr.data_canRemove;
+                });
+            });
+        };
+        set_jstree_event_listeners();
+
+
         var span_remove = '<span class="template-remove aui-icon aui-icon-small aui-iconfont-close-dialog" ' +
             'style="float: right; top: 2px; margin-left: 5px"></span>';
         var span_sure = '<span class="template-remove-sure" ' +
@@ -233,7 +326,6 @@
 
         $("#manage-pagetree-insert-template-button").click(function () {
             TemplateService.getTemplateList(function (templates) {
-                // console.log(templates);
                 var template_list = $("#pagetree-template-list-inner");
                 var blueprint_template_list = $("#pagetree-template-list-blueprint-inner");
                 template_list.empty();
@@ -243,22 +335,22 @@
                     if (id.templateType == "custom") {
                         template_list.append(
                             '<li data-template-name="' + templates[i].name + '" ' +
-                                'data-template-id="' + id.customOutlineId + '" ' +
-                                'data-template-type="' + id.templateType + '">' +
-                                '<a href="#">' +
-                                    templates[i].name +
-                                    span_remove +
-                                '</a>' +
+                            'data-template-id="' + id.customOutlineId + '" ' +
+                            'data-template-type="' + id.templateType + '">' +
+                            '<a href="#">' +
+                            templates[i].name +
+                            span_remove +
+                            '</a>' +
                             '</li>'
                         );
                     } else { // fromBlueprint
                         blueprint_template_list.append(
                             '<li data-template-name="' + templates[i].name + '" ' +
-                                'data-template-id="' + id.spaceBlueprintId + '" ' +
-                                'data-template-type="' + id.templateType + '">' +
-                                '<a href="#">' +
-                                    templates[i].name +
-                                '</a>' +
+                            'data-template-id="' + id.spaceBlueprintId + '" ' +
+                            'data-template-type="' + id.templateType + '">' +
+                            '<a href="#">' +
+                            templates[i].name +
+                            '</a>' +
                             '</li>'
                         );
                     }
@@ -302,7 +394,11 @@
                 templateElem.dataset.templateId,
                 templateElem.dataset.templateType,
                 function (template) {
-                    show_template_tree();
+                    show_template_tree(
+                        template.name,
+                        templateElem.dataset.templateId,
+                        templateElem.dataset.templateType
+                    );
                     template_tree.jstree(true).destroy();
                     init_template_tree(null);
                     var jstree = template_tree.jstree(true);
@@ -315,12 +411,12 @@
             );
         });
 
-        $("#template-upload-input").on('change', function(e) {
+        $("#template-upload-input").on('change', function (e) {
             var file = e.target.files[0];
             if (file) {
                 var fr = new FileReader();
                 fr.onload = function (e) {
-                    TemplateService.fromFile(e.target.result, function() {
+                    TemplateService.fromFile(e.target.result, function () {
                         document.getElementById("manage-pagetree-insert-template-button").click();
                     });
                 };
@@ -329,48 +425,6 @@
             this.value = null;
             return false;
         });
-
-        $("#manage-pagetree-rename-page-button").click(function () {
-            var selected = tree.jstree(true).get_selected();
-            if (!selected.length) return false;
-            rename_page(selected[0]);
-        });
-
-        tree.on('dblclick', 'a.jstree-anchor', function (e) {
-            var page_id = $(e.target).parent().attr("id");
-            rename_page(page_id);
-        });
-
-        $("#manage-pagetree-remove-page-button").click(function () {
-            var selected = tree.jstree(true).get_selected();
-            if (!selected.length) return false;
-            for (var i = 0; i < selected.length; ++i) {
-                remove_page(selected[i]);
-            }
-        });
-
-        var set_jstree_event_listeners = function () {
-            tree.on('move_node.jstree', function (e, data) {
-                var parentName = tree.jstree(true).get_node(data.parent).text;
-                ManagePagetreeCommand.movePage(data.node.id, data.parent, data.position, data.node.text, parentName);
-            });
-
-            tree.on("changed.jstree", function () {
-                var jstree = tree.jstree(true);
-                var selected = jstree.get_selected();
-
-                $("#manage-pagetree-rename-page-button")[0].disabled = !selected.every(function (e) {
-                    var node = jstree.get_node(e);
-                    return node.type == "new" || node.a_attr.data_canEdit;
-                });
-
-                $("#manage-pagetree-remove-page-button")[0].disabled = !selected.every(function (e) {
-                    var node = jstree.get_node(e);
-                    return node.type == "new" || node.a_attr.data_canRemove;
-                });
-            });
-        };
-        set_jstree_event_listeners();
 
         //region link controls
         $("#add-pagetree-link-id").click(function (e) {
@@ -389,6 +443,10 @@
         //endregion
 
         //region dialog controls
+        $("#template-page-tree-close").click(function () {
+            hide_template_tree();
+        });
+
         $(dialog + "-close-button").click(function (e) {
             e.preventDefault();
             AJS.dialog2(dialog).hide();
@@ -435,7 +493,8 @@
 
         $(dialog + "-save-button").click(function () {
             var actionsContainer = $("#pagetree-action-list");
-            var actions = command_list_to_html(ManagePagetreeCommand.getCommands());
+            var commands = ManagePagetreeCommand.getCommands();
+            var actions = command_list_to_html(commands);
 
             if (actions != "") actions = "<li>" + actions + "</li>";
             actionsContainer.html(actions);

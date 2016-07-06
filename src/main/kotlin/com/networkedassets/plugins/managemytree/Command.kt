@@ -47,7 +47,7 @@ data class OriginalPage
         JsonSubTypes.Type(RemovePage::class, name = "removePage"),
         JsonSubTypes.Type(MovePage::class, name = "movePage"),
         JsonSubTypes.Type(RenamePage::class, name = "renamePage"),
-        JsonSubTypes.Type(InsertTemplate::class, name = "insertTemplate")
+        JsonSubTypes.Type(InsertTemplatePart::class, name = "insertTemplatePart")
 )
 @JsonIgnoreProperties(ignoreUnknown = true)
 abstract class Command : (PageManager, ExecutionContext) -> Unit {

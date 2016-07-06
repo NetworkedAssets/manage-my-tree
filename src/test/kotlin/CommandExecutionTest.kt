@@ -103,7 +103,7 @@ class CommandExecutionTest : Spek({
                 }
             }
 
-            on("receiving a valid RemovePage request") { // TODO: fix this test to not remove a root page. Also, add a proper error message when user tries to do that.
+            on("receiving a valid RemovePage request") {
                 val resp = pageTreeService.managePages("TST", listOf(RemovePage("1")))
 
                 it("should respond with 200") {

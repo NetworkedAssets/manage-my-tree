@@ -24,15 +24,19 @@ button.add-node-btn, button.rem-node-btn {
     height: 100%;
 }
 
-#template-name {
+#template-name-parent {
     position: fixed;
     display: block;
     background-color: white;
     padding: 10px;
+    width: 433px;
 }
 
-#template-name span {
-    margin-left: 366px;
+#template-page-tree-close {
+    top: 17px;
+    cursor: pointer;
+    position: absolute;
+    left: 425px;
 }
 
 .pagetree-half #page-tree {

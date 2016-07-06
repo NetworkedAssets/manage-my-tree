@@ -26,8 +26,6 @@ class MovePage(val pageId: String, val newParentId: String?, val newPosition: In
         pageManager.setPagePosition(page, newPosition)
     }
 
-
-
     private fun moveAsChildIfNecessary(page: Page, newParentId: String?, pageManager: PageManager, ec: ExecutionContext) {
         if (newParentId == null) return
         val newParent = pageManager.getPage(newParentId, ec)

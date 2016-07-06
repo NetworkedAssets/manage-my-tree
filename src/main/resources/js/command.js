@@ -11,13 +11,14 @@ ManagePagetreeCommand = (function ($, undefined) {
                 parentId: parentId
             });
         },
-        insertTemplate: function (templateId, parentId, newPageJstreeIds, templateName) {
+        insertTemplatePart: function(name, parentId, templatePartId, newPageJstreeId, position) {
             commands.push({
-                commandType: "insertTemplate",
-                templateId: templateId,
+                commandType: "insertTemplatePart",
                 parentId: parentId,
-                newPageJstreeIds: newPageJstreeIds,
-                name: templateName
+                templatePartId: templatePartId,
+                newPageJstreeId: newPageJstreeId,
+                name: name,
+                position: position
             });
         },
         removePage: function (pageId, pageName) {

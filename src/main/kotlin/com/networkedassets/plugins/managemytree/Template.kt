@@ -106,6 +106,28 @@ sealed class TemplateId {
     }
 }
 
+data class TemplatePartId
+@JsonCreator constructor(
+        @param:JsonProperty("partId") @get:JsonProperty("partId") val partId: String,
+        @param:JsonProperty("templateId") @get:JsonProperty("templateId") val templateId: TemplateId) {
+    @JsonIgnore
+    fun getOutlineWithoutChildren() = if (templateId is TemplateId.FromBlueprint) {
+        val pluginModule = TemplateService.instance.pluginManager.getPluginModule(
+                partId
+        ) as ContentTemplateModuleDescriptor
+
+        val pageTemplate = pluginModule.module
+        Outline(
+                title = pageTemplate.title,
+                text = pageTemplate.content,
+                id = this,
+                children = listOf()
+        )
+    } else {
+        CustomTemplateManager.instance.getOutlineById(this)
+    }
+}
+
 @Path("/templates")
 @Produces("application/json")
 @Consumes("application/json")
@@ -207,6 +229,9 @@ class CustomTemplateManager(private val ao: ActiveObjects) {
     fun getAll() = ao.find(CustomTemplateAO::class.java).map { it.toTemplate() }
     fun getById(id: Int) = ao.get(CustomTemplateAO::class.java, id).toTemplate()
 
+    fun getOutlineById(id: TemplatePartId) = ao.get(CustomOutlineAO::class.java, id.partId.toInt())
+            .toOutline(id.templateId)
+
     fun create(template: Template): Template = ao.executeInTransaction {
         val templateEntity = ao.create(CustomTemplateAO::class.java,
                 mapOf("NAME" to template.name))
@@ -303,11 +328,14 @@ data class Template
 }
 
 //region toCustomTemplate conversions
-fun CustomTemplateAO.toTemplate() = Template(
-        name = this.name,
-        outlines = this.outlines.map { it.toOutline() },
-        id = TemplateId.Custom(this.id)
-)
+fun CustomTemplateAO.toTemplate(): Template {
+    val id = TemplateId.Custom(this.id)
+    return Template(
+            name = this.name,
+            outlines = this.outlines.map { it.toOutline(id) },
+            id = id
+    )
+}
 
 fun Opml.toTemplate() = Template(
         name = this.head.title ?: "template without title",
@@ -317,10 +345,11 @@ fun Opml.toTemplate() = Template(
 
 fun SpaceBlueprintModuleDescriptor.toTemplate(headerOnly: Boolean = false): Template? {
     if (this.contentTemplateRefNode == null) return null
+    val id = TemplateId.FromBlueprint(this.completeKey)
     return Template(
             name = tryGetI18n(this)?.getText(this.i18nNameKey) ?: this.name ?: "blankSpace",
-            outlines = if (headerOnly) listOf() else listOf(this.contentTemplateRefNode.toOutline()),
-            id = TemplateId.FromBlueprint(this.completeKey)
+            outlines = if (headerOnly) listOf() else listOf(this.contentTemplateRefNode.toOutline(id)),
+            id = id
     )
 }
 
@@ -340,17 +369,17 @@ data class Outline
         @param:JsonProperty("title") @get:JsonProperty("title") val title: String,
         @param:JsonProperty("text") @get:JsonProperty("text") val text: String,
         @param:JsonProperty("children") @get:JsonProperty("children") val children: List<Outline>,
-        @param:JsonProperty("id") @get:JsonProperty("id") val id: Int?
+        @param:JsonProperty("id") @get:JsonProperty("id") val id: TemplatePartId?
 ) {
     constructor(title: String, text: String, children: List<Outline>) : this(title, text, children, null)
 }
 
 //region toCustomOutline conversions
-fun CustomOutlineAO.toOutline(): Outline = Outline(
+fun CustomOutlineAO.toOutline(templateId: TemplateId): Outline = Outline(
         title = this.title,
         text = this.text,
-        children = this.children.map { it.toOutline() },
-        id = this.id
+        children = this.children.map { it.toOutline(templateId) },
+        id = TemplatePartId(this.id.toString(), templateId)
 )
 
 fun OpmlOutline.toOutline(): Outline = Outline(
@@ -359,7 +388,7 @@ fun OpmlOutline.toOutline(): Outline = Outline(
         children = this.outline.map { it.toOutline() }
 )
 
-fun SpaceBlueprintModuleDescriptor.ContentTemplateRefNode.toOutline(): Outline {
+fun SpaceBlueprintModuleDescriptor.ContentTemplateRefNode.toOutline(templateId: TemplateId): Outline {
     val pluginModule = TemplateService.instance.pluginManager.getPluginModule(
             this.ref.completeKey
     ) as ContentTemplateModuleDescriptor
@@ -368,8 +397,8 @@ fun SpaceBlueprintModuleDescriptor.ContentTemplateRefNode.toOutline(): Outline {
     return Outline(
             title = pageTemplate.title,
             text = pageTemplate.content,
-            children = this.children.map { it.toOutline() },
-            id = pageTemplate.title.hashCode() // TODO: do something better here, might collide
+            children = this.children.map { it.toOutline(templateId) },
+            id = TemplatePartId(pluginModule.completeKey, templateId)
     )
 }
 //endregion

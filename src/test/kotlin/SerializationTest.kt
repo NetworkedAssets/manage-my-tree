@@ -4,6 +4,7 @@ import com.networkedassets.plugins.managemytree.*
 import com.networkedassets.plugins.managemytree.commands.*
 import org.codehaus.jackson.map.ObjectMapper
 import org.junit.Assert.assertEquals
+import org.junit.Ignore
 import org.junit.Test
 import java.util.*
 
@@ -39,20 +40,20 @@ class SerializationTest {
         val rnpd = om.readValue(rnps, Command::class.java)
         assertEquals(rnp, rnpd)
 
-        val inp = InsertTemplate(
+        val inp = InsertTemplatePart(
                 "foo",
-                TemplateId.FromBlueprint("bar"),
-                Collections.singletonMap("2", "b"))
-        inp.insertedPages.add(2L)
+                TemplatePartId("bar", TemplateId.FromBlueprint("bar")),
+                "2", 8)
+        inp.insertedPageId = 2L
         val inps = om.writeValueAsString(inp)
         val inpd = om.readValue(inps, Command::class.java)
         assertEquals(inp, inpd)
 
-        val inp2 = InsertTemplate(
+        val inp2 = InsertTemplatePart(
                 "foo",
-                TemplateId.Custom(42),
-                Collections.singletonMap("2", "a"))
-        inp2.insertedPages.add(3L)
+                TemplatePartId("foo", TemplateId.Custom(42)),
+                "1", 2)
+        inp2.insertedPageId = 3L
         val inps2 = om.writeValueAsString(inp2)
         val inpd2 = om.readValue(inps2, Command::class.java)
         assertEquals(inp2, inpd2)
@@ -69,32 +70,4 @@ class SerializationTest {
         val customTemplate = om.readValue(om.writeValueAsString(t), Template::class.java)
         assertEquals(customTemplate, t)
     }
-
-    @Suppress("unused")
-    @Test fun testSerializeKotlinObjectLiterals() {
-        val s = om.writeValueAsString(object { val name = "foo"; val id = 2; })
-        assertEquals(s, """{"name":"foo","id":2}""")
-    }
-
-    @Test fun testDeserializeInsertTemplate() {
-        //language=JSON
-        val s = """
-            {
-                "commandType": "insertTemplate",
-                "templateId": {
-                    "templateType": "custom",
-                    "customOutlineId": 1
-                },
-                "parentId": "98310",
-                "newPageJstreeIds": {
-                    "1": "j1_11",
-                    "2": "j1_12"
-                },
-                "name": "test"
-            }
-        """
-
-        val cmds: Command = om.readValue(s, Command::class.java)
-    }
-
 }
