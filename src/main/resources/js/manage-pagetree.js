@@ -66,7 +66,8 @@
             "core": {
                 "data": data,
                 "check_callback": function (operation, node) {
-                    return operation !== "move_node";
+                    console.log(operation);
+                    return operation !== "move_node" && operation !== "copy_node";
                 },
                 "dblclick_toggle": false,
                 "themes": {
@@ -166,6 +167,8 @@
         for (var i = 0; i < to_remove.length; ++i) {
             move_data.new_instance.delete_node(to_remove[i]);
         }
+
+        move_data.new_instance.open_node(move_data.node.parent);
     }
 
     function rename_page(page_id) {
@@ -184,8 +187,24 @@
         var jstree = tree.jstree(true);
 
         var page = jstree.get_node(page_id);
-        if (!(page.type == "new" || page.a_attr.data_canRemove)) return false;
+        if (!(page.id.indexOf('j') == 0 || page.a_attr.data_canRemove)) return false;
         var pageName = page.text;
+
+        var template_jstree = template_tree.jstree(true);
+        var pages_and_names = get_all_pages_and_names(template_tree);
+
+        function reenable_template_node(p) {
+            var index = pages_and_names.names.indexOf(p.text);
+            if (index !== -1) {
+                template_jstree.enable_node(pages_and_names.pages[index]);
+            }
+            for (var i = 0; i < p.children.length; ++i) {
+                var child = jstree.get_node(p.children[i]);
+                reenable_template_node(child);
+            }
+        }
+
+        reenable_template_node(page);
 
         jstree.delete_node(page_id);
         ManagePagetreeCommand.removePage(page_id, pageName);
@@ -274,8 +293,9 @@
         }).join("</li><li>");
     }
 
-    function get_all_pages_and_names() {
-        var page_tree = tree.jstree(true);
+    function get_all_pages_and_names(jstree) {
+        if (!jstree) jstree = tree;
+        var page_tree = jstree.jstree(true);
         var all_children = page_tree.get_node("#").children_d.map(function (el) {
             return page_tree.get_node(el);
         });
@@ -348,12 +368,12 @@
 
                 $("#manage-pagetree-rename-page-button")[0].disabled = !selected.every(function (e) {
                     var node = jstree.get_node(e);
-                    return node.type == "new" || node.a_attr.data_canEdit;
+                    return node.id.indexOf('j') == 0 || node.a_attr.data_canEdit;
                 });
 
                 $("#manage-pagetree-remove-page-button")[0].disabled = !selected.every(function (e) {
                     var node = jstree.get_node(e);
-                    return node.type == "new" || node.a_attr.data_canRemove;
+                    return node.id.indexOf('j') == 0 || node.a_attr.data_canRemove;
                 });
             });
         };
