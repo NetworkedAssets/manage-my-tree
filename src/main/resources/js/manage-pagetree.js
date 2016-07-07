@@ -176,7 +176,7 @@
 
         var page = jstree.get_node(page_id);
         var oldName = page.text;
-        if (!(page.type == "new" || page.a_attr.data_canEdit)) return false;
+        if (!(page.id.indexOf('j') == 0 || page.a_attr.data_canEdit)) return false;
 
         jstree.edit(page, null, function (page) {
             ManagePagetreeCommand.renamePage(page_id, page.text, oldName);
