@@ -66,7 +66,6 @@
             "core": {
                 "data": data,
                 "check_callback": function (operation, node) {
-                    console.log(operation);
                     return operation !== "move_node" && operation !== "copy_node";
                 },
                 "dblclick_toggle": false,
@@ -417,6 +416,7 @@
                     }
                 }
             });
+            return false;
         });
 
         var template_list = $("#pagetree-template-list-inner");
