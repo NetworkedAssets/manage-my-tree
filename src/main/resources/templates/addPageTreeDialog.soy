@@ -27,9 +27,10 @@
         <div class="aui-buttons">
             <button id="manage-pagetree-create-page-button" class="aui-button aui-button-primary">Create</button>
             <a id="manage-pagetree-insert-template-button"
-               class="aui-button aui-dropdown2-trigger"
+               class="aui-button aui-style-default aui-dropdown2-trigger"
                aria-owns="pagetree-template-list"
-               aria-haspopup="true">
+               aria-haspopup="true"
+               href="#pagetree-template-list">
                 Template
             </a>
             <div id="pagetree-template-list"
@@ -101,9 +102,9 @@
     </footer>
 </section>
 <aui-inline-dialog id="add-page-tree-dialog-really-save-dialog"
-                    data-aui-alignment="right bottom"
-                    data-aui-responds-to="toggle"
-                    aria-hidden="true">
+                   data-aui-alignment="right bottom"
+                   data-aui-responds-to="toggle"
+                   aria-hidden="true">
     <div>
         <h3>Are you sure?</h3>
         <p>Do you really want to commit these changes:</p>
@@ -115,9 +116,9 @@
     </div>
 </aui-inline-dialog>
 <aui-inline-dialog id="add-page-tree-dialog-really-undo-dialog"
-                    data-aui-alignment=""
-                    data-aui-responds-to="toggle"
-                    aria-hidden="true">
+                   data-aui-alignment=""
+                   data-aui-responds-to="toggle"
+                   aria-hidden="true">
     <div>
         <h3>Are you sure?</h3>
         <p>Do you really want to undo these changes:</p>

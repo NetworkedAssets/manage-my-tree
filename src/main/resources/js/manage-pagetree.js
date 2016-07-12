@@ -516,7 +516,8 @@
             AJS.dialog2(dialog).hide();
         });
 
-        AJS.dialog2(dialog).on("hide", function () {
+        AJS.dialog2(dialog).on("hide", function (e) {
+            if (e.target.id != dialog.substr(1)) return;
             hide_template_tree();
             tree.jstree(true).destroy();
             template_tree.jstree(true).destroy();
