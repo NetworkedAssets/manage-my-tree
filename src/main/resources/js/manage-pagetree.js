@@ -384,7 +384,7 @@
         var span_sure = '<span class="template-remove-sure" ' +
             'style="float: right; text-decoration: underline; margin-left: 5px">Remove?</span>';
 
-        $("#manage-pagetree-insert-template-button").click(function () {
+        var load_templates = function () {
             TemplateService.getTemplateList(function (templates) {
                 var template_list = $("#pagetree-template-list-inner");
                 var blueprint_template_list = $("#pagetree-template-list-blueprint-inner");
@@ -417,6 +417,9 @@
                 }
             });
             return false;
+        };
+        AJS.$("#pagetree-template-list").on({
+            "aui-dropdown2-show": load_templates
         });
 
         var template_list = $("#pagetree-template-list-inner");

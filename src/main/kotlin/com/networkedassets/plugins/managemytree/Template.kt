@@ -261,7 +261,7 @@ class CustomTemplateManager(private val ao: ActiveObjects) {
     }
 
     fun remove(id: Int) = ao.executeInTransaction {
-        ao.delete(*ao.get(CustomTemplateAO::class.java, id).thisAndAllOutlines)
+        ao.get(CustomTemplateAO::class.java, id).thisAndAllOutlines.forEach { ao.delete(it) }
     }
 
     //region singleton stuff
@@ -292,12 +292,12 @@ val CustomTemplateAO.thisAndAllOutlines: Array<Entity>
     get() {
         val entities = ArrayList<Entity>(127)
         fun addSelfAndDescendants(o: CustomOutlineAO) {
-            entities += o
             o.children.forEach(::addSelfAndDescendants)
+            entities += o
         }
 
-        entities += this
         outlines.forEach(::addSelfAndDescendants)
+        entities += this
 
         return entities.toTypedArray()
     }
