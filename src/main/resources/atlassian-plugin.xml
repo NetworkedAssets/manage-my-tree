@@ -28,7 +28,8 @@
                   location="/js/jstree/themes/default/style.css"/>
 
         <resource type="download" name="add-pagetree.css" location="/css/add-pagetree.css"/>
-        <resource type="download" name="command.js" location="/js/command.js" />
+        <resource type="download" name="command.js" location="/js/command.js"/>
+        <resource type="download" name="templates.js" location="/js/templates.js"/>
         <resource type="download" name="manage-pagetree.js" location="/js/manage-pagetree.js"/>
 
         <resource type="download" name="images/" location="/images"/>
@@ -52,16 +53,35 @@
         <resource type="download" name="addPageTreeDialog.soy.js"
                   location="/templates/addPageTreeDialog.soy"/>
 
+        <resource type="download" name="addPageTreeDialogPre510.soy.js"
+                  location="/templates/addPageTreeDialogPre510.soy"/>
+
         <context>page</context>
         <context>manage-my-tree</context>
     </web-resource>
 
     <web-panel key="pagetree_dialog" location="atl.general">
+        <condition class="com.atlassian.confluence.plugin.descriptor.web.conditions.BuildNumberCondition">
+            <!-- from confluence 5.10.0 onward -->
+            <param name="minBuildNumber">6441</param>
+        </condition>
         <dependency>confluence.web.resources:aui-experimental</dependency>
         <dependency>com.atlassian.auiplugin:aui-inline-dialog2</dependency>
         <dependency>com.atlassian.auiplugin:aui-experimental-soy-templates</dependency>
         <resource name="view" type="soy"
                   location="com.networkedassets.plugins.manage-my-tree:soy-templates/Confluence.Templates.AddPagetree.addPageTreeDialog"/>
+    </web-panel>
+
+    <web-panel key="pagetree_dialog_pre_5_10" location="atl.general">
+        <condition class="com.atlassian.confluence.plugin.descriptor.web.conditions.BuildNumberCondition">
+            <!-- up to confluence 5.9.12 -->
+            <param name="maxBuildNumber">6220</param>
+        </condition>
+        <dependency>confluence.web.resources:aui-experimental</dependency>
+        <dependency>com.atlassian.auiplugin:aui-inline-dialog2</dependency>
+        <dependency>com.atlassian.auiplugin:aui-experimental-soy-templates</dependency>
+        <resource name="view" type="soy"
+                  location="com.networkedassets.plugins.manage-my-tree:soy-templates/Confluence.Templates.AddPagetreePre510.addPageTreeDialog"/>
     </web-panel>
 
     <web-item name="Manage pageTree - link" key="add-pagetree-link"
@@ -77,6 +97,17 @@
         <description>Provides REST endpoints used by Manage My Tree plugin</description>
     </rest>
 
+    <component name="Outline Template Service" key="templateService"
+               class="com.networkedassets.plugins.managemytree.TemplateService" />
+
+    <component name="Custom Template AO Manager" key="customTemplateManager"
+               class="com.networkedassets.plugins.managemytree.CustomTemplateManager" />
+
+    <ao key="ao-module">
+        <entity>com.networkedassets.plugins.managemytree.CustomOutlineAO</entity>
+        <entity>com.networkedassets.plugins.managemytree.CustomTemplateAO</entity>
+    </ao>
+
     <!-- imports -->
     <component-import key="applicationProperties"
                       interface="com.atlassian.sal.api.ApplicationProperties"/>
@@ -86,5 +117,10 @@
                       interface="com.atlassian.soy.renderer.SoyTemplateRenderer"/>
     <component-import key="pluginLicenseManager"
                       interface="com.atlassian.upm.api.license.PluginLicenseManager"/>
+    <component-import key="ao"
+                      interface="com.atlassian.activeobjects.external.ActiveObjects"/>
+
+    <component-import key="webItemService"
+                      interface="com.atlassian.confluence.plugins.createcontent.rest.BlueprintWebItemService"/>
 
 </atlassian-plugin>

@@ -1,8 +1,9 @@
-package com.networkedassets.plugins.managemytree.command
+package com.networkedassets.plugins.managemytree.commands
 
 import com.atlassian.confluence.api.service.exceptions.PermissionException
 import com.atlassian.confluence.pages.Page
 import com.atlassian.confluence.pages.PageManager
+import com.networkedassets.plugins.managemytree.*
 import org.codehaus.jackson.annotate.JsonCreator
 import org.codehaus.jackson.annotate.JsonProperty
 import org.codehaus.jackson.annotate.JsonTypeName
@@ -24,8 +25,6 @@ class MovePage(val pageId: String, val newParentId: String?, val newPosition: In
         moveAsChildIfNecessary(page, newParentId, pageManager, ec)
         pageManager.setPagePosition(page, newPosition)
     }
-
-
 
     private fun moveAsChildIfNecessary(page: Page, newParentId: String?, pageManager: PageManager, ec: ExecutionContext) {
         if (newParentId == null) return

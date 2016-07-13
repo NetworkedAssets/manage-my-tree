@@ -1,4 +1,4 @@
-package com.networkedassets.plugins.managemytree.command
+package com.networkedassets.plugins.managemytree
 
 import com.atlassian.confluence.pages.AbstractPage
 import com.atlassian.confluence.pages.Page
@@ -8,19 +8,13 @@ import com.atlassian.confluence.security.PermissionManager
 import com.atlassian.confluence.spaces.Space
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal
 import com.atlassian.confluence.user.ConfluenceUser
+import com.networkedassets.plugins.managemytree.commands.*
 import org.codehaus.jackson.annotate.*
 import java.util.*
 
 /**
  * Used to store mappings from jstree ids to page ids needed in single command list execution
  */
-// for people not familiar with Kotlin:
-//  "constructor(...)" after the class name is the default constructor
-//  "constructor" keyword is optional, unless you want to use annotations on constructor
-//  "val" and "var" in constructor params mean that the class has a property (field + getter + (if var) setter) that has the same name
-//  "@JvmOverloads" allows you to use default parameters in other languages (i.e. Java)
-//  ":" means "implements"/"extends" from Java
-//  "by m" generates implementations for all the methods in the interface/class that delegate to m
 class ExecutionContext
 @JvmOverloads constructor(
         val permissionManager: PermissionManager,
@@ -52,14 +46,14 @@ data class OriginalPage
         JsonSubTypes.Type(AddPage::class, name = "addPage"),
         JsonSubTypes.Type(RemovePage::class, name = "removePage"),
         JsonSubTypes.Type(MovePage::class, name = "movePage"),
-        JsonSubTypes.Type(RenamePage::class, name = "renamePage")
+        JsonSubTypes.Type(RenamePage::class, name = "renamePage"),
+        JsonSubTypes.Type(InsertTemplatePart::class, name = "insertTemplatePart")
 )
 @JsonIgnoreProperties(ignoreUnknown = true)
 abstract class Command : (PageManager, ExecutionContext) -> Unit {
     abstract fun execute(pageManager: PageManager, ec: ExecutionContext)
     abstract fun revert(pageManager: PageManager)
     override fun invoke(pageManager: PageManager, ec: ExecutionContext) = execute(pageManager, ec)
-
 }
 
 fun PageManager.getAbstractPage(s: String, ec: ExecutionContext): AbstractPage {
@@ -87,8 +81,7 @@ fun PageManager.setPagePosition(page: Page, newPosition: Int?) {
 
 val Page.truePosition: Int
     get() {
-        this.parent.sortedChildren.forEachIndexed { i, child ->
-            if (child == this) return i
-        }
+        val i = this.parent?.sortedChildren?.indexOf(this) ?: 0
+        if (i != -1) return i
         throw IllegalArgumentException("Page is not in its parent's children list")
     }

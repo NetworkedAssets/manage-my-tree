@@ -9,8 +9,6 @@ import com.atlassian.confluence.spaces.SpaceManager
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 import com.google.common.collect.Lists
-import com.networkedassets.plugins.managemytree.command.Command
-import com.networkedassets.plugins.managemytree.command.ExecutionContext
 import org.codehaus.jackson.annotate.JsonCreator
 import org.codehaus.jackson.annotate.JsonProperty
 import org.codehaus.jackson.map.ObjectMapper
@@ -36,7 +34,7 @@ class PageTreeService(
     @Produces("application/json")
     @Consumes("application/json")
     fun managePages(@QueryParam("space") space: String, managePagesCommand: List<Command>?): Response {
-        val s = spaceManager.getSpace(space)
+        val s = spaceManager.getSpace(space) ?: return error("Space $space not found}")
 
         if (isUnauthorized(s)) return error("Unauthorized")
         if (managePagesCommand == null) return error("Did not get the modification commands")
@@ -52,11 +50,11 @@ class PageTreeService(
     }
 
     private fun executeCommands(s: Space, commands: List<Command>): Response? {
-        val ec = ExecutionContext(permissionManager, s)
+        val ec = ExecutionContext(permissionManager, /*spaceBlueprintManager, blueprintContentGenerator,*/ s)
         val executedCommands = ArrayList<Command>(commands.size)
         for (command in commands) {
             try {
-                command.execute(pageManager, ec)
+                command(pageManager, ec)
             } catch (e: Exception) {
                 revertCommands(executedCommands, s)
                 return error(e)
@@ -74,7 +72,7 @@ class PageTreeService(
     @Consumes("application/json")
     fun revertLastChange(@QueryParam("space") spaceKey: String): Response {
         try {
-            val s = spaceManager.getSpace(spaceKey)
+            val s = spaceManager.getSpace(spaceKey) ?: return error("Space $spaceKey not found")
             val lastChanges = getLastChanges(s) ?: return error("No last changes")
             if (AuthenticatedUserThreadLocal.get().key.stringValue != lastChanges.userKey)
                 return error("Unauthorized")
@@ -87,7 +85,6 @@ class PageTreeService(
         }
     }
 
-    @Throws(IOException::class)
     private fun persistLastChanges(executedCommands: List<Command>, ec: ExecutionContext) {
         val pluginSettings = pluginSettingsFactory.createSettingsForKey(ec.space.key)
         val lc = LastChanges(executedCommands, AuthenticatedUserThreadLocal.get().key.stringValue)
@@ -105,7 +102,7 @@ class PageTreeService(
         for (executedCommand in Lists.reverse(executedCommands)) {
             executedCommand.revert(pageManager)
         }
-        persistLastChanges(ArrayList<Command>(), ExecutionContext(permissionManager, s))
+        persistLastChanges(ArrayList<Command>(), ExecutionContext(permissionManager, /*spaceBlueprintManager, blueprintContentGenerator,*/ s))
     }
 
     @GET
@@ -113,7 +110,7 @@ class PageTreeService(
     @Produces("application/json")
     fun getPageTree(@QueryParam("space") spaceKey: String, @QueryParam("rootPageId") rootId: Long?): Response {
         try {
-            val space = spaceManager.getSpace(spaceKey)
+            val space = spaceManager.getSpace(spaceKey) ?: return error("Space $spaceKey not found")
             if (isUnauthorized(space)) return error("Unauthorized")
 
             val page = pageFromSpaceOrHomepage(rootId, space)
@@ -130,7 +127,8 @@ class PageTreeService(
                     JsonPage.from(
                             page,
                             AuthenticatedUserThreadLocal.get(),
-                            permissionManager),
+                            permissionManager,
+                            isRoot = true),
                     lastCommands)
 
             return Response.ok(OBJECT_MAPPER.writeValueAsString(pageTreeInfo)).build()
@@ -171,5 +169,5 @@ data class JsonMessage
 )
 
 fun error(message: String) = Response.status(500).entity(JsonMessage(500, message)).build()
-fun error(exception: Exception) = error(exception.message ?: "")
+fun error(exception: Exception) = error(exception.let { it.printStackTrace(); it.message } ?: "")
 fun success(message: String) = Response.ok(JsonMessage(200, message)).build()

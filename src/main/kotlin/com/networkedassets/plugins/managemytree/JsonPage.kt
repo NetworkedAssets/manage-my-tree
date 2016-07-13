@@ -21,12 +21,12 @@ class JsonPage(
     )
 
     companion object {
-        fun from(page: Page, user: ConfluenceUser, permissionManager: PermissionManager): JsonPage = JsonPage(
+        fun from(page: Page, user: ConfluenceUser, permissionManager: PermissionManager, isRoot: Boolean = false): JsonPage = JsonPage(
                 id = page.id.toString(),
                 text = page.displayTitle,
                 a_attr = Attr(
                         permissionManager.hasPermission(user, Permission.EDIT, page),
-                        permissionManager.hasPermission(user, Permission.REMOVE, page)
+                        if (isRoot) false else permissionManager.hasPermission(user, Permission.REMOVE, page)
                 ),
                 children = page.sortedChildren
                         .filter({ p -> permissionManager.hasPermission(user, Permission.VIEW, p) })
