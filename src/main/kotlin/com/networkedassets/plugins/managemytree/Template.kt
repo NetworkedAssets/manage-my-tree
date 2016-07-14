@@ -332,7 +332,7 @@ fun CustomTemplateAO.toTemplate(): Template {
     val id = TemplateId.Custom(this.id)
     return Template(
             name = this.name,
-            outlines = this.outlines.map { it.toOutline(id) },
+            outlines = this.outlines.map { it.toOutline(id) }.sortedBy { it.id!!.partId.toInt() },
             id = id
     )
 }
@@ -378,7 +378,7 @@ data class Outline
 fun CustomOutlineAO.toOutline(templateId: TemplateId): Outline = Outline(
         title = this.title,
         text = this.text,
-        children = this.children.map { it.toOutline(templateId) },
+        children = this.children.map { it.toOutline(templateId) }.sortedBy { it.id!!.partId.toInt() },
         id = TemplatePartId(this.id.toString(), templateId)
 )
 
