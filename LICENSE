@@ -192,3 +192,10 @@ third-party archives.
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+
+The Manage My Tree uses external libraries, which have their own licenses:
+[JUnit] http://junit.org/license.html [EPL - v 1.0]
+[jsTree] https://raw.githubusercontent.com/vakata/jstree/master/LICENSE-MIT [MIT]
+[Spek] https://github.com/JetBrains/spek/blob/master/LICENSE.TXT [BSD]
+[mockito-Kotlin] https://github.com/nhaarman/mockito-kotlin/blob/master/LICENSE [MIT]
+[Kluent] https://github.com/MarkusAmshove/Kluent/blob/master/LICENSE [MIT]
