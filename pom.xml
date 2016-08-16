@@ -7,7 +7,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.networkedassets.plugins</groupId>
     <artifactId>manage-my-tree</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.2</version>
 
     <organization>
         <name>NetworkedAssets Sp. z o.o.</name>
@@ -15,7 +15,9 @@
     </organization>
 
     <name>Manage My Tree</name>
-    <description>The "Manage My Tree" plugin allows for easy pagetree management. The plugin allows for bulk adding, removing, and renaming pages.</description>
+    <description>The "Manage My Tree" plugin allows for easy pagetree management. The plugin allows for bulk adding,
+        removing, and renaming pages.
+    </description>
     <packaging>atlassian-plugin</packaging>
 
     <repositories>
@@ -27,10 +29,10 @@
 
     <dependencies>
         <dependency>
-              <groupId>com.atlassian.upm</groupId>
-              <artifactId>licensing-api</artifactId>
-              <version>2.0.1</version>
-              <scope>provided</scope>
+            <groupId>com.atlassian.upm</groupId>
+            <artifactId>licensing-api</artifactId>
+            <version>2.0.1</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.atlassian.confluence</groupId>
@@ -138,13 +140,17 @@
                     <execution>
                         <id>compile</id>
                         <phase>process-sources</phase>
-                        <goals> <goal>compile</goal> </goals>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
                     </execution>
 
                     <execution>
                         <id>test-compile</id>
                         <phase>process-test-sources</phase>
-                        <goals> <goal>test-compile</goal> </goals>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

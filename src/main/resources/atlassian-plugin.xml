@@ -119,8 +119,6 @@
                       interface="com.atlassian.upm.api.license.PluginLicenseManager"/>
     <component-import key="ao"
                       interface="com.atlassian.activeobjects.external.ActiveObjects"/>
-
     <component-import key="webItemService"
                       interface="com.atlassian.confluence.plugins.createcontent.rest.BlueprintWebItemService"/>
-
 </atlassian-plugin>
