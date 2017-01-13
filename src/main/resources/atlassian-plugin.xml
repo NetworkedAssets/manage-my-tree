@@ -8,7 +8,7 @@
         <param name="plugin-logo">images/page_tree.png</param>
         <param name="vendor-icon">images/NA_16x16.png</param>
         <param name="vendor-logo">images/NA_72x72.png</param>
-        <param name="atlassian-licensing-enabled">true</param>
+        <param name="atlassian-licensing-enabled">false</param>
     </plugin-info>
 
     <!-- add our i18n resource -->
